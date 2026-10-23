@@ -71,16 +71,23 @@ Why not add them in the `OwnsCard`/deck path: the deck is the player's own choic
 baseline is the host's and must not touch anyone's save. Active cards are run state (replicated to clients, saved in
 the campaign run's snapshot like any found card: `CanBeSavedInSnapshot`), which is exactly the scope wanted.
 
-### Open questions (live test)
-- Does the game grant the deck again on every chapter (then the baseline is re-added per chapter: fine, idempotent),
-  or does the run snapshot carry the active cards over (then once)? Either way the cards persist.
-- The character-select / loadout screens list the slot's active cards: the baseline should show up there after the
-  grant, with the card's own icon and text (nothing new is drawn).
-- Team-once cards (`MaxTeamCount`) as a baseline: the game's add may refuse the second copy; the log shows it.
+### Live results (Windows, 2026-10-23, solo host + 3 bots, Evansburgh Hard)
+`baseline_cards=Scavenger_Weapons,Talent_ShareTheWealth,Talent_DownInFront` in the ini. Three runs:
+1. Host slot: `##> GrantLoadoutCardsForSlot` / `granting 15 cards` / `/GrantLoadoutCardsForSlot`, then
+   `rules: baseline cards for ? (slot 0): 2 added: Scavenger_Weapons, Talent_DownInFront (1 already had, 0 unknown)`
+   (Share the Wealth was in the player's deck). The game logged its own `AddGameplayCardToSlotByRowHandle for player
+   ... Row: Scavenger_Weapons`, `LogAnalyticsCardSystemComponent: Received New Gameplay Card: Scavenger_Weapons`,
+   the audio bank load, and the loot system `LSS Mod - Scavenger_Weapons_Mod_C ... Items.Weapons.Primaries (2.00)`:
+   the card is in effect. One chat notice. The bots' three grants (`GrantAllLoadoutCards`, 15-30 s later) logged `no
+   player slot`: a bot's state has no `OwnedPlayerSlot` and no pawn yet.
+2. Slot lookup by the card data's index through `UPlayerSlot.SlotIndex`: no such property (the one-time dump in
+   `cheats_slot_by_index` listed `PlayerSlot_BP_C`: `SlotIdx@672 ... Team@698 ...`).
+3. With `SlotIdx` + `Team`: slot 0 `2 added`, slots 1-3 `3 added` each. The Tab **Active Cards** screen shows Down
+   in Front ("+10 Health"), Weapon Scavenger ("More weapons spawn") and Share the Wealth with "Played by teammates:
+   3, Played: 1": the bots' copies count as team cards like any other.
+The player name is `?` in the log at grant time (names aren't set yet); the slot number identifies the survivor.
 
-### Verification (planned)
-Host sets `Scavenger_Weapons,Talent_ShareTheWealth,Talent_DownInFront` (Run tab or `/rules baseline add ...`), starts
-a mission with one client: host log `GrantLoadoutCardsForSlot` for each slot followed by `rules: baseline cards for
-<name>: 3 added: ...` (bots included), the cards in every survivor's card list, one chat notice, `DrawCount 0` on the
-client as before (the deck grant itself is unchanged). Chapter 2: cards still active. A client hot-joining mid-mission
-gets them with its deck.
+### Open
+- Chapter 2 and later: re-granted per chapter (idempotent) or carried by the run snapshot; either way the cards stay.
+- A client hot-joining mid-mission: the take-over's grant runs the same code (not yet seen live).
+- Team-once cards (`MaxTeamCount`) as a baseline: the game's add may refuse the second copy; the log shows it.
