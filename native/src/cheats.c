@@ -514,8 +514,9 @@ UObject *cheats_slot_for_ps(UObject *ps) {
     UObject *s = ps && ue_prop_offset(ps, "OwnedPlayerSlot") >= 0 ? ue_get_ptr(ps, "OwnedPlayerSlot") : NULL;
     return s ? s : slot_of(ps_pawn(ps));
 }
-// the UPlayerSlot with that FPlayerSlotIndex {int32 SlotId, uint8 Team} (UPlayerSlot.SlotIndex), e.g. a bot's at the
-// mission start, before its pawn and state are linked up
+// the PlayerSlot with that slot index and team (PlayerSlot.SlotIdx int32 + Team byte; the card data's
+// FPlayerSlotIndex {SlotId, Team} names the same pair), e.g. a bot's at the mission start, before its pawn and
+// state are linked up
 UObject *cheats_slot_by_index(int32_t id, uint8_t team) {
     UObject *gs = game_state(), *psm = gs ? ue_get_ptr(gs, "PlayerSlotManager") : NULL;
     int32_t off = psm ? ue_prop_offset(psm, "TeamSlots") : -1;
@@ -524,10 +525,31 @@ UObject *cheats_slot_by_index(int32_t id, uint8_t team) {
         TArray *slots = (TArray *)((uint8_t *)teams->data + (size_t)t * 0x18 + 8);
         for (int i = 0; i < slots->num; i++) {
             UObject *s = ((UObject **)slots->data)[i];
-            int32_t so = s ? ue_prop_offset(s, "SlotIndex") : -1;
-            if (so < 0) continue;
-            const char *ix = (const char *)s + so;
-            if (*(const int32_t *)ix == id && *(const uint8_t *)(ix + 4) == team) return s;
+            int32_t so = s ? ue_prop_offset(s, "SlotIdx") : -1, to = s ? ue_prop_offset(s, "Team") : -1;
+            if (so < 0 || to < 0) continue;
+            if (*(const int32_t *)((const char *)s + so) == id && *((const uint8_t *)s + to) == team) return s;
+        }
+    }
+    // once: what the slots look like, for the day the layout differs (ue_prop_offset -1 = no such property)
+    static int dumped;
+    if (!dumped++) {
+        char cn[96], pn[96];
+        LOG("cheats: slot %d/%d not found; PlayerSlotManager %p, %d team(s)", id, team, (void *)psm, teams ? teams->num : -1);
+        for (int t = 0; teams && t < teams->num; t++) {
+            TArray *slots = (TArray *)((uint8_t *)teams->data + (size_t)t * 0x18 + 8);
+            LOG("cheats:   team entry %d: %d slot(s), first 8 bytes %016llx", t, slots->num, (unsigned long long)*(uint64_t *)((uint8_t *)teams->data + (size_t)t * 0x18));
+            for (int i = 0; i < slots->num && i < 8; i++) {
+                UObject *s = ((UObject **)slots->data)[i];
+                if (!s) { LOG("cheats:     slot[%d] null", i); continue; }
+                int32_t so = ue_prop_offset(s, "SlotIdx"), to = ue_prop_offset(s, "Team");
+                LOG("cheats:     slot[%d] %s SlotIdx@%d = %d, Team@%d = %d", i, ue_obj_name(s, cn, sizeof cn), so,
+                    so >= 0 ? *(int32_t *)((char *)s + so) : -1, to, to >= 0 ? *((uint8_t *)s + to) : 255);
+                if (i == 0) for (UStruct *st = U_CLASS(s); st; st = US_SUPER(st)) {
+                    char line[600] = ""; int n = 0;
+                    for (FField *f = US_CHILDPROPS(st); f && n < 40; f = FF_NEXT(f), n++) { size_t l = strlen(line); snprintf(line + l, sizeof line - l, " %s@%d", ue_name(FF_NAME(f), pn, sizeof pn), FP_OFFSET(f)); }
+                    if (line[0]) LOG("cheats:     %s props:%s", ue_obj_name(st, cn, sizeof cn), line);
+                }
+            }
         }
     }
     return NULL;
