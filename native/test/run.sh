@@ -8,7 +8,8 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)" root="$(cd "$(dirname "$0")/../.." && pwd)"
 v="$root/vendor"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-"$v/zig/zig" cc -O2 -Wall -Wno-unused-function -I"$here/../src" -I"$v/monocypher/src" -I"$v/monocypher/src/optional" \
+zig="$v/zig/zig"; [[ -x $zig.exe ]] && zig+=.exe
+"$zig" cc -O2 -Wall -Wno-unused-function -I"$here/../src" -I"$v/monocypher/src" -I"$v/monocypher/src/optional" \
   -I"$v/zlib/contrib/puff" "$here/updcore_test.c" "$here/../src/updcore.c" "$v/monocypher/src/monocypher.c" \
   "$v/monocypher/src/optional/monocypher-ed25519.c" "$v/zlib/contrib/puff/puff.c" -o "$tmp/updcore_test"
 python3 - "$tmp" <<'PY'
@@ -45,5 +46,6 @@ openssl genpkey -algorithm ed25519 -out "$tmp/shopkey.pem" 2>/dev/null   # the s
 "$tmp/updcore_test" "$tmp"
 
 # Add-on pak checks (native/test/pakfmt_test.c)
-"$v/zig/zig" cc -O2 -Wall -I"$here/../src" "$here/pakfmt_test.c" "$here/../src/pakfmt.c" -o "$tmp/pakfmt_test"
+zig="$v/zig/zig"; [[ -x $zig.exe ]] && zig+=.exe
+"$zig" cc -O2 -Wall -I"$here/../src" "$here/pakfmt_test.c" "$here/../src/pakfmt.c" -o "$tmp/pakfmt_test"
 "$tmp/pakfmt_test"

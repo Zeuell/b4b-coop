@@ -85,6 +85,15 @@ cat > "$ini" <<'INI'
 ; start or connect, try netguard=off and tell us.
 ;netguard=block
 INI
+# Private builds: B4B_INI_SET="auto_update=0;shop=0;launch=coop" turns those settings on in the shipped ini (the
+# commented ";key=..." line becomes "key=value"; an unknown key is appended). Unset = the ini above, all commented.
+if [[ -n ${B4B_INI_SET:-} ]]; then
+  IFS=';' read -ra kvs <<< "$B4B_INI_SET"
+  for kv in "${kvs[@]}"; do
+    k=${kv%%=*}
+    if grep -q "^;$k=" "$ini"; then sed -i "s|^;$k=.*|$kv|" "$ini"; else printf '\n%s\n' "$kv" >> "$ini"; fi
+  done
+fi
 sed -i 's/$/\r/' "$ini"
 cat > "$out/b4bcoop-README.txt" <<TXT
 b4bcoop $version (protocol $protocol) - private Back 4 Blood co-op in offline mode, with your Steam friends.
@@ -210,7 +219,11 @@ sed -i 's/$/\r/' "$out/b4bcoop-README.txt"
 # Reproducible zip: fixed timestamps and file order, no extra attributes.
 find "$out" -type d -exec chmod 755 {} + ; find "$out" -type f -exec chmod 644 {} +
 find "$out" -exec touch -d '2020-01-01 00:00:00 UTC' {} +
-(cd "$out" && find . -mindepth 1 | sed 's|^\./||' | LC_ALL=C sort | TZ=UTC zip -qX -@ "$dist/$zip")
+if command -v zip >/dev/null; then
+  (cd "$out" && find . -mindepth 1 | sed 's|^\./||' | LC_ALL=C sort | TZ=UTC zip -qX -@ "$dist/$zip")
+else   # Git Bash on Windows has no Info-ZIP: same entries, order and timestamps from Python (tools/zipdir.py)
+  (cd "$out" && find . -mindepth 1 | sed 's|^\./||' | LC_ALL=C sort | python3 "$root/tools/zipdir.py" "$dist/$zip")
+fi
 (cd "$dist" && sha256sum "$zip" b4bcoop/xinput1_3.dll b4bcoop/Gobi/Binaries/Win64/X3DAudio1_7.dll > SHA256SUMS)
 "$root/tools/sign-release.sh" manifest "$dist/$zip" "$version" "$protocol" > "$dist/b4bcoop-update.txt"
 echo "$dist/$zip"

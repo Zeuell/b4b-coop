@@ -14,7 +14,7 @@
 # updater's live test builds a "newer release" this way: tools/update-test.py).
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
-zig="$here/../vendor/zig/zig"
+zig="$here/../vendor/zig/zig"; [[ -x $zig.exe ]] && zig+=.exe   # Git Bash on Windows (tools/fetch-deps.sh)
 mh="$here/../vendor/minhook"
 mc="$here/../vendor/monocypher/src" puff="$here/../vendor/zlib/contrib/puff"   # the updater's signature check + inflate
 stb="$here/../vendor/stb"                                                        # the add-on shop's thumbnails (stb_image)
