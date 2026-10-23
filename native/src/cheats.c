@@ -514,6 +514,24 @@ UObject *cheats_slot_for_ps(UObject *ps) {
     UObject *s = ps && ue_prop_offset(ps, "OwnedPlayerSlot") >= 0 ? ue_get_ptr(ps, "OwnedPlayerSlot") : NULL;
     return s ? s : slot_of(ps_pawn(ps));
 }
+// the UPlayerSlot with that FPlayerSlotIndex {int32 SlotId, uint8 Team} (UPlayerSlot.SlotIndex), e.g. a bot's at the
+// mission start, before its pawn and state are linked up
+UObject *cheats_slot_by_index(int32_t id, uint8_t team) {
+    UObject *gs = game_state(), *psm = gs ? ue_get_ptr(gs, "PlayerSlotManager") : NULL;
+    int32_t off = psm ? ue_prop_offset(psm, "TeamSlots") : -1;
+    TArray *teams = off >= 0 ? (TArray *)((char *)psm + off) : NULL;
+    for (int t = 0; teams && t < teams->num; t++) {
+        TArray *slots = (TArray *)((uint8_t *)teams->data + (size_t)t * 0x18 + 8);
+        for (int i = 0; i < slots->num; i++) {
+            UObject *s = ((UObject **)slots->data)[i];
+            int32_t so = s ? ue_prop_offset(s, "SlotIndex") : -1;
+            if (so < 0) continue;
+            const char *ix = (const char *)s + so;
+            if (*(const int32_t *)ix == id && *(const uint8_t *)(ix + 4) == team) return s;
+        }
+    }
+    return NULL;
+}
 int cheats_card_each(UObject *gcm, void (*fn)(const CardRef *c, const char *row, const char *shown, void *ctx), void *ctx) {
     int32_t off = gcm ? ue_prop_offset(gcm, "AllCards") : -1;
     if (off < 0) return -1;

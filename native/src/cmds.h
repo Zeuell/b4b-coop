@@ -382,6 +382,7 @@ void rules_note_free_charge(const char *row);           // burncards.c: a charge
 typedef struct { UObject *table; FName row; } CardRef;
 UObject *cheats_card_manager(void);                     // GameState.GameplayCardManager, NULL when there is none
 UObject *cheats_slot_for_ps(UObject *ps);               // the PlayerState's UPlayerSlot (OwnedPlayerSlot, else its pawn's)
+UObject *cheats_slot_by_index(int32_t id, uint8_t team); // the UPlayerSlot with that SlotIndex {SlotId, Team} (PlayerSlotManager)
 int cheats_card_each(UObject *gcm, void (*fn)(const CardRef *c, const char *row, const char *shown, void *ctx), void *ctx);  // GCM.AllCards; -1 none
 int cheats_card_find(UObject *gcm, const char *name, CardRef *out);   // exact row/shown name, or a unique substring; 1 found
 int cheats_card_add(UObject *gcm, UObject *slot, const CardRef *card); // GCM.AddGameplayCardToSlotByRowHandle; 1 called

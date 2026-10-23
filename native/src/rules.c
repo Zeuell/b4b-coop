@@ -57,6 +57,8 @@ static const struct { uint64_t va; uint8_t n; uint8_t b[8]; } LAYOUT[] = {
     {0x14177a978, 7, {0x4c,0x8d,0xb1,0x98,0x02,0x00,0x00}},// SlotDataFor: lea r14, [gcm+0x298]
     {0x14177a986, 7, {0x48,0x69,0xfb,0xd8,0x00,0x00,0x00}},// SlotDataFor: imul rdi, rbx, 0xD8 (stride)
 };
+#define SLOT_ID(s)       (*(int32_t *)(s))                   // FPlayerSlotIndex SlotId (+0) and Team (+4): SlotDataFor's keys
+#define SLOT_TEAM(s)     (*((uint8_t *)(s) + 4))
 #define SLOT_ACTIVE(s)   ((TArray *)((char *)(s) + 0x10))   // ActiveHeroCards: FActiveGameplayCard, 0x28 each
 #define SLOT_GRANTED(s)  (*((uint8_t *)(s) + 0x59))         // HasReceivedLoadoutCards
 #define ACTIVE_ROW(a, i) (*(FName *)((char *)(a)->data + (size_t)(i) * 0x28 + 8))
@@ -108,10 +110,13 @@ static void grant_detour(UObject *gcm, UObject *ps) {
     void *slot = ((SlotDataFn)ADDR_SLOTDATA)(gcm, ps, 0);
     if (!slot || !SLOT_GRANTED(slot)) return;    // the game granted nothing (not in a mission, no slot)
     if (!base_bots && ps_is_bot(ps)) return;
-    UObject *pslot = cheats_slot_for_ps(ps);
+    // the state's UPlayerSlot: a bot's state has no OwnedPlayerSlot and no pawn yet at the mission start's
+    // GrantAllLoadoutCards, so the slot data's own index finds it in the PlayerSlotManager
+    UObject *pslot = cheats_slot_by_index(SLOT_ID(slot), SLOT_TEAM(slot));
+    if (!pslot) pslot = cheats_slot_for_ps(ps);
     char who[64], list[512] = "";
     admin_ps_name(ps, who, sizeof who);
-    if (!pslot) { LOG("rules: baseline cards: no player slot for %s", who); return; }
+    if (!pslot) { LOG("rules: baseline cards: no player slot %d/%d for %s", SLOT_ID(slot), SLOT_TEAM(slot), who); return; }
     int added = 0, missing = 0;
     for (int i = 0; i < nbase; i++) {
         CardRef c;
@@ -123,8 +128,8 @@ static void grant_detour(UObject *gcm, UObject *ps) {
         }
     }
     base_added_total += added;
-    LOG("rules: baseline cards for %s: %d added%s%s (%d already had, %d unknown)", who, added, added ? ": " : "", list,
-        nbase - added - missing, missing);
+    LOG("rules: baseline cards for %s (slot %d): %d added%s%s (%d already had, %d unknown)", who, SLOT_ID(slot), added,
+        added ? ": " : "", list, nbase - added - missing, missing);
     UObject *w = ue_world();
     if (added && w && noticed_world != w) {
         noticed_world = w;
