@@ -1,2 +1,5 @@
+# The build is bash + zig (native/build.sh, tools/fetch-deps.sh, launch/*.sh): every text file stays LF in the working
+# tree, whatever core.autocrlf says, so the scripts run from a Windows (Git Bash) checkout too.
+* text=auto eol=lf
 # Windows batch files need CRLF
 *.cmd text eol=crlf
