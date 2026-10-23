@@ -374,10 +374,17 @@ int cheats_cmd(const char *verb, char *rest, Out *o);   // dev builds: `cheat <c
 
 // rules.c: the host's run rules (~ window Run tab, ini keys; host-side only, docs/investigations/run-rules.md)
 int rules_init(void);
-int rules_live(const char *key, const char *val);       // ini free_burncards=
-void rules_slash(char *rest, Out *o);                   // chat /rules [free_burncards on|off] (CMD_HOST)
+int rules_live(const char *key, const char *val);       // ini free_burncards=, baseline_cards=, baseline_cards_bots=
+void rules_slash(char *rest, Out *o);                   // chat /rules [free_burncards on|off | baseline ...] (CMD_HOST)
 int rules_free_burncards(void);                         // burncards.c: drop every burn-card charge
 void rules_note_free_charge(const char *row);           // burncards.c: a charge was dropped by the rule (notice)
+// cheats.c card helpers shared with rules.c: a card = {its DataTable, its row name} (FDataTableRowHandle's first 2 fields)
+typedef struct { UObject *table; FName row; } CardRef;
+UObject *cheats_card_manager(void);                     // GameState.GameplayCardManager, NULL when there is none
+UObject *cheats_slot_for_ps(UObject *ps);               // the PlayerState's UPlayerSlot (OwnedPlayerSlot, else its pawn's)
+int cheats_card_each(UObject *gcm, void (*fn)(const CardRef *c, const char *row, const char *shown, void *ctx), void *ctx);  // GCM.AllCards; -1 none
+int cheats_card_find(UObject *gcm, const char *name, CardRef *out);   // exact row/shown name, or a unique substring; 1 found
+int cheats_card_add(UObject *gcm, UObject *slot, const CardRef *card); // GCM.AddGameplayCardToSlotByRowHandle; 1 called
 
 // updater.c: in-game updates from the ~ window's Updates tab (#34, docs/investigations/updater.md)
 int updater_early(void *module);        // DllMain: count a fresh update's starts, revert one that failed; 1 = start nothing

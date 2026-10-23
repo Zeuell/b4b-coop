@@ -33,7 +33,7 @@ of the window, and also in your chat.
 | **Camera** | Third person on/off, start the game in third person, its key, sliders for distance, side, height and FOV (Ctrl+click a slider to type a number), Swap shoulder, Reset camera, aim correction, free look on/off | `/thirdperson ...`; ini `thirdperson*` |
 | **Flashlight** | Your light (Toggle, On, Off; host: Automatic), its key, sticky mode; **Beam (your view)**: sliders for width, range and brightness, Reset beam | `/flashlight ...`; ini `flashlight_key`, `flashlight_sticky`, `flashlight_width`, `flashlight_range`, `flashlight_brightness` |
 | **Cheats** | Host: **Cheats on**, a player picker (`me`, everyone, a player) for the buttons marked `*`, then every cheat: god, heal, revive, infinite ammo, copper, cards, fly, noclip, walk, teleport, free camera, size, horde, kill all ridden, freeze, director phases, spawn, game speed, win, lose, and your own save's supply points / skull totems / burn cards / unlock all (everyone, while the host has cheats on). Also (host, no cheats needed): **Bots open pinged toolkit doors**, **Bots heal you on request** | every `/cheats` command; ini `bot_toolkit_doors`, `bot_heal_requests` |
-| **Run** | Host: the rules of your game, for everyone in it: **Burn cards are free** (played cards are never used up) | `/rules`; ini `free_burncards` |
+| **Run** | Host: the rules of your game, for everyone in it: **Burn cards are free** (played cards are never used up); **Baseline cards**: cards every survivor gets on top of their own deck (a searchable list with **Add**, **Remove** per card, **Bots get them too**) | `/rules`; ini `free_burncards`, `baseline_cards`, `baseline_cards_bots` |
 | **Add-ons** | One table of every add-on: the add-on shop's and the ones you have (see [Add-ons](#the--windows-add-ons-tab) below): picture, name and size, installed (version, update available), **Add**, **Update**, **Wear** / **Take off** (an outfit) / **Use** / **Stop** (a weapon look), **Remove**, **Undo**, **Turn on**; a search box, All / Installed / Available, sort by name or by when installed (**A-Z** / **Z-A**, **Newest** / **Oldest**), **Refresh**; **Load add-ons**; **Host rules**: **Model swaps allowed**, who may join with add-ons (`addons_policy`; greyed on a client) | `/addons ...`, `/models on\|off`; ini `addons`, `addons_policy`, `shop` |
 | **Settings** | The window's text size and key, the flashlight, third-person and heal-request keys; **Game start**: ask co-op or online every time, always b4bcoop co-op, always online (see [Co-op or online](#co-op-or-online-at-the-game-start)) | ini `overlay_scale`, `overlay_key`, `flashlight_key`, `thirdperson_key`, `bot_heal_key`, `launch` |
 | **Updates** | Your version; **Check for updates** (the latest release: version, protocol, short notes); **Download and install on next start**; the host's version after a "same version" refusal (**Check** it); **Go back to** the previous version; **Update b4bcoop automatically when the game starts** (on/off) and the last automatic update. See [Updates](#updates) | ini `updates`, `auto_update` (no chat command) |
@@ -296,6 +296,15 @@ written to the other players' saves. `/rules` alone shows them.
   player, you included. A player still needs to own at least one of a card to play it (the card screen lists what
   their own profile holds). Everyone is told in the chat when it takes effect. Saved in your `b4bcoop.ini`
   (`free_burncards=1`); off by default.
+- **`/rules baseline add <card>`**, **`remove <card>`**, **`clear`**, **`list`**, **`bots on|off`** — **Baseline
+  cards**: cards every survivor gets on top of their own 15-card deck. When the game hands a survivor their deck (at
+  the mission start, and when a player joins a mission and takes over a bot), each baseline card they don't have yet
+  is added as an active card, the way a card found in a run is. Nobody needs to own the cards. `<card>` is the card's
+  name as the game shows it (`Weapon Scavenger`) or its row name (`Scavenger_Weapons`); in a mission, `/rules
+  baseline list` and the `~` window's Run tab show the list to pick from. Bots get them too unless `bots off`. Applies
+  from the next mission start or join. Saved in your `b4bcoop.ini`
+  (`baseline_cards=Scavenger_Weapons,Talent_ShareTheWealth,Talent_DownInFront`, `baseline_cards_bots=0`). Everyone is
+  told in the chat when the cards are handed out.
 
 ## Cheats (sandbox)
 
@@ -624,7 +633,7 @@ Rules:
 - No `b4bcoop.ini` at all = all defaults.
 - **Applied while the game runs:** `thirdperson`, `thirdperson_key`, `thirdperson_distance`, `thirdperson_side`,
   `thirdperson_height`, `thirdperson_fov`, `thirdperson_aimfix`, `thirdperson_freelook`,
-  `flashlight_key`, `flashlight_sticky`, `bot_heal_key`, `bot_heal_requests`, `bot_toolkit_doors`, `free_burncards`,
+  `flashlight_key`, `flashlight_sticky`, `bot_heal_key`, `bot_heal_requests`, `bot_toolkit_doors`, `free_burncards`, `baseline_cards`, `baseline_cards_bots`,
   `flashlight_width`, `flashlight_range`, `flashlight_brightness`,
   `allow_joins`, `allow_steamids`, `presence`, `teamsize` (from the next map), `overlay`, `overlay_key`,
   `overlay_scale`, `addons_policy`, `updates`, `host_handoff`, `launch` and `auto_update` (both read at the next game start). Only the lines you changed count: an edit doesn't undo what you set with a chat command this
@@ -776,6 +785,8 @@ join=steam:7656119XXXXXXXXXX
 | `steam_p2p` | `1` | `0`: no joins through Steam at all (then only `host_ip=1` joins work) |
 | `bot_toolkit_doors` | `1` | Host (`~` Cheats tab, works without cheats): when anyone pings a locked supply-stash door (the ones that need a toolkit), the nearest bot carrying a toolkit (up to 40 m away) goes and opens it, also when the ping hit a teammate in front of the door. `0`: bots answer such pings only as in the original game (only from close by, and only a clean ping on the door) |
 | `free_burncards` | `0` | Host (`~` Run tab, `/rules`): `1` = burn cards played in your game are never used up (the saferoom charge is dropped for every player). Players still need to own a card to play it |
+| `baseline_cards` | (none) | Host (`~` Run tab, `/rules baseline`): comma-separated card row names every survivor gets on top of their deck when a mission grants it, e.g. `Scavenger_Weapons,Talent_ShareTheWealth,Talent_DownInFront`. Up to 16 |
+| `baseline_cards_bots` | `1` | `0`: the bots don't get the baseline cards |
 | `bot_heal_requests` | `0` | Host (`~` Cheats tab, works without cheats): `1` = a player's heal key sends the nearest bot with a healing item to heal them. `0`: the game's own healing only; a client's request gets `The host has heal requests off.`, the host's own key says how to turn it on |
 | `outfits_screen` | `1` | `0`: add-on outfits are not offered in the game's customization screen and the Add-ons tab's **Wear** is off (only `/model`); restart to apply |
 | `presence_addr` | your LAN address | With `host_ip=1`: the address friends' **Join Game** connects to, e.g. `presence_addr=203.0.113.5:7777` (your public IP) |

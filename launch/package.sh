@@ -62,8 +62,11 @@ cat > "$ini" <<'INI'
 ;bot_heal_requests=1
 ;bot_toolkit_doors=0
 
-; Host only, run rules (~ window, tab Run): burn cards are never used up in your game (nobody is charged).
+; Host only, run rules (~ window, tab Run): burn cards are never used up in your game (nobody is charged); cards
+; every survivor gets on top of their own deck (card row names, comma-separated); 0 = the bots don't get them.
 ;free_burncards=1
+;baseline_cards=Scavenger_Weapons,Talent_ShareTheWealth,Talent_DownInFront
+;baseline_cards_bots=0
 
 ; Host only: who may join. Default: only your Steam friends. "anyone" also lets in people who aren't.
 ;allow_joins=friends

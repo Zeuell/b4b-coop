@@ -40,4 +40,47 @@ no `rewards: forwarding AdjustConsumableQuantity`; on the client no `[CLIENT RPC
 profiles' `consumables.*.spent` unchanged after the deferred save (~30 s). With the rule off, +1 each (burn-cards.md
 §5 diff recipe). The chat shows the notice once.
 
-## 2. Baseline cards (`baseline_cards=`): see §2 once implemented.
+## 2. Baseline cards (`baseline_cards=<row>,<row>,...`, `baseline_cards_bots=0|1`)
+
+The host names cards every survivor plays with, on top of their own 15-card deck (a "house loadout": Weapon
+Scavenger, Share the Wealth, Down in Front, ...). Not a deck-size change: a run's active cards already grow beyond 15
+with the cards found and bought on the way, and that is the mechanism used.
+
+### Retail
+`UGameplayCardManager::GrantLoadoutCardsForSlot(GCM*, AGobiPlayerState*)` @ `0x141769690` (card-draft.md) runs on
+the server when a slot gets its deck: the mission start for every hero and a hot-joiner's bot take-over
+(`ApplyLoadoutForCharacterTransfer`). Prologue: `40 55 41 54 41 56 41 57 48 8d 6c 24 c1 48 81 ec f8 00 00 00 45 33
+c0 4c 8b f2 4c 8b f9 e8 ...`. It asks `0x14177a950(gcm, ps, bCreate=0)` for the state's slot data
+(`PlayerActiveGameplayCardData`: the `GCM+0x298` array burncards.c also walks, stride 0xD8; found by
+`ps+0x2a0`/`+0x2a4` = slot index/team) and returns at once when there is none, when `[slot+0x59]`
+(`HasReceivedLoadoutCards`) is already set, or when `[GCM+0x3a0]->+0x120 != 3` (the match state). Then each deck card
+that passes `OwnsCard` is added to the slot's `ActiveHeroCards` (`+0x10`, `FActiveGameplayCard` 0x28 each, the row's
+FName at +8) and `+0x59` is set. Callers: `0x1417688ea`, `0x141769520`, `0x14177b180`.
+
+### The rule
+Hook on `GrantLoadoutCardsForSlot` (rules.c; prologue + the four layout bytes checked, else the rule is off and the
+Run tab says so). The detour reads the slot data's `+0x59` before and after the original: only when it **turned on
+in this call** (the deck was just granted; re-entries and non-mission calls change nothing) it resolves each
+`baseline_cards` row through the GCM's `AllCards` (`cheats_card_find`, exact row or shown name), skips the ones
+already in `ActiveHeroCards` (a card in the player's own deck is granted once), and adds the rest with the game's
+own `AddGameplayCardToSlotByRowHandle` on the state's `UPlayerSlot` (`OwnedPlayerSlot`, else the pawn's slot:
+`cheats_slot_for_ps`) — the `/card` cheat's path, no ownership check, so a joiner needs to own nothing. Bots too
+unless `baseline_cards_bots=0`. Log `rules: baseline cards for <name>: N added: ...`; one `admin_notice` per map.
+
+Why not add them in the `OwnsCard`/deck path: the deck is the player's own choice and lives in their profile; the
+baseline is the host's and must not touch anyone's save. Active cards are run state (replicated to clients, saved in
+the campaign run's snapshot like any found card: `CanBeSavedInSnapshot`), which is exactly the scope wanted.
+
+### Open questions (live test)
+- Does the game grant the deck again on every chapter (then the baseline is re-added per chapter: fine, idempotent),
+  or does the run snapshot carry the active cards over (then once)? Either way the cards persist.
+- The character-select / loadout screens list the slot's active cards: the baseline should show up there after the
+  grant, with the card's own icon and text (nothing new is drawn).
+- Team-once cards (`MaxTeamCount`) as a baseline: the game's add may refuse the second copy; the log shows it.
+
+### Verification (planned)
+Host sets `Scavenger_Weapons,Talent_ShareTheWealth,Talent_DownInFront` (Run tab or `/rules baseline add ...`), starts
+a mission with one client: host log `GrantLoadoutCardsForSlot` for each slot followed by `rules: baseline cards for
+<name>: 3 added: ...` (bots included), the cards in every survivor's card list, one chat notice, `DrawCount 0` on the
+client as before (the deck grant itself is unchanged). Chapter 2: cards still active. A client hot-joining mid-mission
+gets them with its deck.

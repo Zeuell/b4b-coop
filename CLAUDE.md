@@ -204,7 +204,12 @@ Detailed engine findings (addresses, obfuscated layouts, class names): `docs/NOT
   - `rules.c` the host's run rules (`~` tab **Run**, order 55; chat `/rules`, CMD_HOST; ini keys, live): host-side
     only, no protocol bump, the players hear a chat notice. `free_burncards=1`: burncards.c's `FindPPCByHydraId`
     detour returns NULL for every `b4bcoop.burn.<n>` key (`rules_free_burncards`), so the game's saferoom charge is
-    dropped for host and clients (`rules_note_free_charge` notices once per 10 s). docs/investigations/run-rules.md.
+    dropped for host and clients (`rules_note_free_charge` notices once per 10 s). `baseline_cards=<rows>` (+
+    `baseline_cards_bots`): hook on `GCM::GrantLoadoutCardsForSlot` 0x141769690 (slot data via 0x14177a950, layout
+    byte-checked): after the original, if the slot's `HasReceivedLoadoutCards` (+0x59) just turned on, every listed
+    card not in its `ActiveHeroCards` is added with the game's `AddGameplayCardToSlotByRowHandle` (cheats.c helpers
+    `cheats_card_find/add/each`, `cheats_slot_for_ps`); one notice per map. Run tab: the list (built once per GCM
+    from `AllCards`) with search/Add/Remove. docs/investigations/run-rules.md.
   - `cheats.c` Cheats: opt-in, host-only sandbox through chat (`/cheats on|off`, then `/god /heal /revive /ammo /copper
     /card /fly /noclip /walk /tp /freecam /size /horde /director /spawn /killall /freeze /slomo /win /lose`); own-save
     cheats `/supply /skulls /burncards /unlockall` (#49, `CMD_OWNSAVE`): every player while the session has cheats on,

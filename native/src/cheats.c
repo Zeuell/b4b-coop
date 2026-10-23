@@ -508,6 +508,43 @@ static UObject *slot_of(UObject *pawn) {
     return NULL;
 }
 
+// ---- shared with rules.c (baseline cards): the card list, a card by name, a card into a slot ----
+UObject *cheats_card_manager(void) { return card_manager(); }
+UObject *cheats_slot_for_ps(UObject *ps) {
+    UObject *s = ps && ue_prop_offset(ps, "OwnedPlayerSlot") >= 0 ? ue_get_ptr(ps, "OwnedPlayerSlot") : NULL;
+    return s ? s : slot_of(ps_pawn(ps));
+}
+int cheats_card_each(UObject *gcm, void (*fn)(const CardRef *c, const char *row, const char *shown, void *ctx), void *ctx) {
+    int32_t off = gcm ? ue_prop_offset(gcm, "AllCards") : -1;
+    if (off < 0) return -1;
+    TArray *all = (TArray *)((char *)gcm + off);
+    char rn[128], dn[128];
+    for (int i = 0; i < all->num; i++) {
+        RowHandle *h = (RowHandle *)((char *)all->data + (size_t)i * sizeof(RowHandle));
+        CardRef c = {h->table, h->row};
+        ue_name(h->row, rn, sizeof rn);
+        card_display(h, dn, sizeof dn);
+        fn(&c, rn, dn, ctx);
+    }
+    return all->num;
+}
+int cheats_card_find(UObject *gcm, const char *name, CardRef *out) {
+    RowHandle *h = NULL;
+    if (!gcm || card_match(gcm, name, &h, NULL, 0) != 1 || !h) return 0;
+    out->table = h->table; out->row = h->row;
+    return 1;
+}
+int cheats_card_add(UObject *gcm, UObject *slot, const CardRef *card) {
+    Call c;
+    if (!gcm || !slot || !call_prep(&c, gcm, "AddGameplayCardToSlotByRowHandle")) return 0;
+    SET(&c, "PlayerSlot", UObject *, slot);
+    RowHandle *ph = carg(&c, "GameplayCardRowHandle");
+    if (!ph) return 0;
+    ph->table = card->table; ph->row = card->row;   // display string left empty (not needed for the lookup)
+    call_go(&c);
+    return 1;
+}
+
 static void cmd_card(char *rest, Out *o) {
     UObject *gcm = card_manager();
     if (!gcm || !in_mission()) { out_printf(o, "cards: only during a mission\n"); return; }
