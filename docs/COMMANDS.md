@@ -296,6 +296,12 @@ written to the other players' saves. `/rules` alone shows them.
   player, you included. A player still needs to own at least one of a card to play it (the card screen lists what
   their own profile holds). Everyone is told in the chat when it takes effect. Saved in your `b4bcoop.ini`
   (`free_burncards=1`); off by default.
+- **On the war table's create-run screen** (host): a **DEFAULT CARDS** panel in the right third of the Campaign run
+  setup lists the default cards (click one to take it off), **+ Default Cards** opens the deck builder's card grid
+  over the screen (search box, pages; click a card to add it or take it off, the marked ones are the current
+  defaults; **Done**), and **Burn cards are free** toggles that rule. The grid needs the deck editor to have been
+  opened once since the game started (the game loads it then); until then the button says so in the log and the
+  `~` window's Run tab or `/rules` do the same job. `runui=0` in `b4bcoop.ini` removes the panel.
 - **`/rules baseline add <card>`**, **`remove <card>`**, **`clear`**, **`list`**, **`bots on|off`** — **Baseline
   cards**: cards every survivor gets on top of their own 15-card deck. When the game hands a survivor their deck (at
   the mission start, and when a player joins a mission and takes over a bot), each baseline card they don't have yet
@@ -787,6 +793,7 @@ join=steam:7656119XXXXXXXXXX
 | `free_burncards` | `0` | Host (`~` Run tab, `/rules`): `1` = burn cards played in your game are never used up (the saferoom charge is dropped for every player). Players still need to own a card to play it |
 | `baseline_cards` | (none) | Host (`~` Run tab, `/rules baseline`): comma-separated card row names every survivor gets on top of their deck when a mission grants it, e.g. `Scavenger_Weapons,Talent_ShareTheWealth,Talent_DownInFront`. Up to 16 |
 | `baseline_cards_bots` | `1` | `0`: the bots don't get the baseline cards |
+| `runui` | `1` | `0`: no DEFAULT CARDS panel on the create-run screen (the `~` Run tab and `/rules` stay) |
 | `bot_heal_requests` | `0` | Host (`~` Cheats tab, works without cheats): `1` = a player's heal key sends the nearest bot with a healing item to heal them. `0`: the game's own healing only; a client's request gets `The host has heal requests off.`, the host's own key says how to turn it on |
 | `outfits_screen` | `1` | `0`: add-on outfits are not offered in the game's customization screen and the Add-ons tab's **Wear** is off (only `/model`); restart to apply |
 | `presence_addr` | your LAN address | With `host_ip=1`: the address friends' **Join Game** connects to, e.g. `presence_addr=203.0.113.5:7777` (your public IP) |

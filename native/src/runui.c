@@ -257,9 +257,13 @@ static void modal_open(void) {
     if (!c_pag) { LOG("runui: CardPaginator_WBP_C is not loaded (open the deck editor once): no picker"); picking = 0; return; }
     UObject *wt = *(UObject **)((char *)panel + o_wt), *root = wt ? *(UObject **)((char *)wt + o_root) : NULL;
     if (!root || !c_image) { picking = 0; return; }
-    // two full-screen canvas children on top of everything: a dark Image (its default white brush, tinted; it also takes
-    // the clicks meant for what is under it) and the content box
-    UObject *parts[2] = { new_widget(panel, c_image), new_widget(panel, c_vbox) };
+    // two full-screen canvas children on top of everything: the backdrop (the deck editor's own BackgroundBlur_WBP_C,
+    // blur + darkening; else a tinted Image) and the content box; the backdrop also takes the clicks meant for what is
+    // under it
+    UClass *c_blur = ue_find_any_class("BackgroundBlur_WBP_C");
+    UObject *back = c_blur ? create_widget(panel, c_blur) : NULL;
+    if (!back) back = new_widget(panel, c_image);
+    UObject *parts[2] = { back, new_widget(panel, c_vbox) };
     for (int k = 0; k < 2; k++) {
         if (!parts[k]) { picking = 0; return; }
         uint8_t q[32] = {0};
@@ -276,8 +280,13 @@ static void modal_open(void) {
         if (zo >= 0) { *(int32_t *)(z + zo) = 100 + k; call_parms(slot, "SetZOrder", z, sizeof z); }
     }
     modal_back = parts[0]; modal = parts[1];
-    FField *a = first_parm(modal_back, "SetColorAndOpacity");
-    if (a && FP_ELSIZE(a) == 16) { uint8_t pp[32] = {0}; float col[4] = {0.02f, 0.02f, 0.03f, 0.94f}; memcpy(pp + FP_OFFSET(a), col, 16); call_parms(modal_back, "SetColorAndOpacity", pp, sizeof pp); }
+    if (!c_blur || U_CLASS(modal_back) == c_image) {
+        FField *a = first_parm(modal_back, "SetColorAndOpacity");
+        char pn[64];
+        LOG("runui: backdrop is a tinted Image (no BackgroundBlur_WBP_C): SetColorAndOpacity param %s size %d at %d",
+            a ? ue_name(FF_NAME(a), pn, sizeof pn) : "-", a ? FP_ELSIZE(a) : -1, a ? FP_OFFSET(a) : -1);
+        if (a && FP_ELSIZE(a) == 16) { uint8_t pp[32] = {0}; float col[4] = {0.02f, 0.02f, 0.03f, 0.94f}; memcpy(pp + FP_OFFSET(a), col, 16); call_parms(modal_back, "SetColorAndOpacity", pp, sizeof pp); }
+    }
     UObject *vbox = modal;
     // content: heading row (heading, search, Done), the status line, the grid
     UObject *top = new_widget(panel, c_hbox);

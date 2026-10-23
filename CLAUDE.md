@@ -210,6 +210,15 @@ Detailed engine findings (addresses, obfuscated layouts, class names): `docs/NOT
     card not in its `ActiveHeroCards` is added with the game's `AddGameplayCardToSlotByRowHandle` (cheats.c helpers
     `cheats_card_find/add/each`, `cheats_slot_for_ps`); one notice per map. Run tab: the list (built once per GCM
     from `AllCards`) with search/Add/Remove. docs/investigations/run-rules.md.
+  - `runui.c` the run rules on the game's create-run screen (host): a DEFAULT CARDS panel built from the game's widgets
+    (TextButton_WBP_C rows via WidgetBlueprintLibrary::Create + AddChild, like lineup.c) into the live
+    MatchmakingSettingsPanel_WBP's root canvas (right third); "+ Default Cards" opens the deck builder's
+    CardPaginator_WBP_C over BackgroundBlur_WBP_C (SetEquippedCards then SetCards; GetVisibleCard(i) + IsHovered +
+    the mouse button's edge = a click, no delegates; re-laid after each toggle, page kept) with a search box and Done.
+    Every action is a chat command (`rules ...`). Card list: PlayerCards_MASTER_DT rows through
+    `cheats_card_table_each` (deck-buildable + Hero*Ability), no card manager needed. Blueprint classes come from
+    `ue_find_any_class` (ue_find_class is native-only) and are looked up when the panel appears (they load with the
+    menus). Ini `runui=0`; dev `runui [rebuild|click <n>]`. run-rules.md §3.
   - `cheats.c` Cheats: opt-in, host-only sandbox through chat (`/cheats on|off`, then `/god /heal /revive /ammo /copper
     /card /fly /noclip /walk /tp /freecam /size /horde /director /spawn /killall /freeze /slomo /win /lose`); own-save
     cheats `/supply /skulls /burncards /unlockall` (#49, `CMD_OWNSAVE`): every player while the session has cheats on,

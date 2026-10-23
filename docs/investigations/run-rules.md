@@ -91,3 +91,41 @@ The player name is `?` in the log at grant time (names aren't set yet); the slot
 - Chapter 2 and later: re-granted per chapter (idempotent) or carried by the run snapshot; either way the cards stay.
 - A client hot-joining mid-mission: the take-over's grant runs the same code (not yet seen live).
 - Team-once cards (`MaxTeamCount`) as a baseline: the game's add may refuse the second copy; the log shows it.
+
+## 3. The create-run screen (`runui.c`)
+
+Players look for run options on the war table's run setup, not in a mod window. The screen is
+`MatchmakingScreen_WBP_C` -> `ContentSwitcher` -> `MatchmakingSettingsPanel_WBP_C` (`notes/matchmaking-*-tree.txt`
+outside the repo hold the dumps): left column `DifficultySelect` / `ActSelect` / `MapButton` (792 wide at x 155 of the
+3840 design), `SettingsInfo` to its right (x 1059..2361; its text runs below the 719 px box), the right third empty.
+
+### Building from the game's widgets
+- Rows: `TextButton_WBP_C` (the screen's own button: `SetText`, hover visuals in its Blueprint) created with
+  `WidgetBlueprintLibrary::Create` (lineup.c's recipe) into a `VerticalBox` added to the panel's root `CanvasPanel`
+  (`AddChildToCanvas`, anchors (0.5, 0), position (520, 470), size 1240 x 1370, Z 50). Heading: a `TextBlock` with the
+  font and colour of the panel's first `TextBlock` (the "Difficulty" heading) through `SetFont` /
+  `SetColorAndOpacity` (the property's bytes copied into the setter's parms: the setter copy-assigns).
+- Clicks: nothing in C can be bound to a Blueprint delegate, so every frame the game thread asks each of our widgets
+  `IsHovered()` and watches the left button's down edge (`GetAsyncKeyState`, only with the game focused and the `~`
+  window closed). The hovered one gets the click. The game's own UI keeps the input: we only look.
+- Lifetime: the widgets' outer is the panel; they die with the screen. The panel is found again (every 0.5 s) when
+  the screen opens: the class's **live** instance (`/Engine/Transient.` path), not the Blueprint's template widgets
+  in `/Game/UI/Screens/...` which `ue_find_first_of` returns first. Blueprint classes (`*_WBP_C`) are not `Class`
+  objects: `ue_find_any_class` (new in ue.c) finds them, and only once the menus loaded them.
+- Picker: the deck builder's `CardPaginator_WBP_C` (5 x 2 `AnotherGameplayCard_WBP_C` a page, its own Prev/Next):
+  `SetEquippedCards(TArray<FDataTableRowHandle>)` then `SetCards(...)` (the marks follow a new layout), handles built
+  in a GMalloc buffer; `GetNumVisibleCards` / `GetVisibleCard(i)` -> `IsHovered` -> `GetCardRowHandle` for the click,
+  then `SetEquippedCards` + `SetCards` again and `NextPage` x the page it was on. Backdrop: the deck editor's
+  `BackgroundBlur_WBP_C`. Search: an `EditableTextBox`, `GetText` -> `Conv_TextToString` each frame. The card list:
+  `PlayerCards_MASTER_DT`'s RowMap through `cheats_card_table_each` with the `RowStruct`'s `Hidden`,
+  `AllowedForDeckbuilding`, `DisabledForPvE` fields: deck-buildable cards and the `Hero*Ability` passives (203).
+  Both Blueprint classes exist only after the deck editor was opened once in the session.
+- Every action is the chat command (`rules baseline add|remove <row>`, `rules free_burncards on|off`): one
+  permission check, one ini writer, one notice, for the tab, the chat and this screen.
+
+### Live (2026-10-23)
+Panel built (5 buttons) on the first try once the two lookups above were fixed; clicks register (a card removed per
+click), the picker shows 203 cards in the game's own card art, a click toggles a card and the mark follows at once.
+Found on the way: `ue_find_class` misses Blueprint classes (silent NULLs), the archetype widgets shadow the live
+screen, UMG reflection resolves late (as hud.c knew), the dev `peek` command crashes the game on a bad address
+(never run it with a guessed argument).
