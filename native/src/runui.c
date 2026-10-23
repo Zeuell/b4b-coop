@@ -236,6 +236,11 @@ static int array_call(UObject *w, const char *fn, int (*want)(int i)) {   // fn(
 static int want_filtered(int i) { return !filter[0] || has_ci(cards[i].shown, filter) || has_ci(cards[i].row, filter); }
 static int want_default(int i) { return rules_baseline_has(cards[i].row); }
 
+static UClass *bp_class(const char *name, const char *path) {   // a Blueprint class, loaded by path when the game hasn't yet
+    UClass *c = ue_find_any_class(name);
+    if (!c && models_load_asset(path)) { c = ue_find_any_class(name); LOG("runui: loaded %s: %s", path, c ? "ok" : "no class"); }
+    return c;
+}
 static void modal_close(void) {
     uint8_t p[16] = {0};
     if (modal) call_parms(modal, "RemoveFromParent", p, sizeof p);
@@ -253,14 +258,16 @@ static void modal_status(void) {
 static void modal_open(void) {
     if (modal) return;
     cards_load();
-    UClass *c_pag = ue_find_any_class("CardPaginator_WBP_C"), *c_image = ue_find_class("Image");
-    if (!c_pag) { LOG("runui: CardPaginator_WBP_C is not loaded (open the deck editor once): no picker"); picking = 0; return; }
+    // the deck editor's widgets load with it; before that, loaded here (LoadAsset_Blocking, as models.c does)
+    UClass *c_pag = bp_class("CardPaginator_WBP_C", "/Game/UI/Widgets/DeckManager/CardPaginator_WBP.CardPaginator_WBP_C"),
+           *c_image = ue_find_class("Image");
+    if (!c_pag) { LOG("runui: CardPaginator_WBP_C could not be loaded: no picker (the ~ window's Run tab lists the cards)"); picking = 0; return; }
     UObject *wt = *(UObject **)((char *)panel + o_wt), *root = wt ? *(UObject **)((char *)wt + o_root) : NULL;
     if (!root || !c_image) { picking = 0; return; }
     // two full-screen canvas children on top of everything: the backdrop (the deck editor's own BackgroundBlur_WBP_C,
     // blur + darkening; else a tinted Image) and the content box; the backdrop also takes the clicks meant for what is
     // under it
-    UClass *c_blur = ue_find_any_class("BackgroundBlur_WBP_C");
+    UClass *c_blur = bp_class("BackgroundBlur_WBP_C", "/Game/UI/Widgets/Common/BackgroundBlur_WBP.BackgroundBlur_WBP_C");
     UObject *back = c_blur ? create_widget(panel, c_blur) : NULL;
     if (!back) back = new_widget(panel, c_image);
     UObject *parts[2] = { back, new_widget(panel, c_vbox) };
