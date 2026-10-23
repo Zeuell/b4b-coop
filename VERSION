@@ -1,5 +1,5 @@
 # b4bcoop version (semver; bump for every release) and protocol (integer; bump whenever host and clients must run
 # matching code: new RPC use, changed forwarding rules, ...). native/build.sh turns both into
 # native/out/gen/b4bcoop_version.h; the host refuses a client with another protocol. CLAUDE.md "Versioning".
-version=0.9.11-zeuell.1
+version=0.9.11-zeuell.2
 protocol=3
