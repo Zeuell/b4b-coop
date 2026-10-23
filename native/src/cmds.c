@@ -333,7 +333,7 @@ static int ini_apply_live(const char *key, const char *val) {
     return thirdperson_live(key, val) || flashlight_live(key, val) || joinpolicy_live(key, val) ||
            presence_live(key, val) || teamsize_live(key, val) || overlay_live(key, val) || addons_live(key, val) ||
            updater_live(key, val) || shop_live(key, val) || online_live(key, val) || bots_live(key, val) ||
-           handoff_live(key, val) || rules_live(key, val);
+           handoff_live(key, val) || rules_live(key, val) || runui_live(key, val);
 }
 const char *cmds_ini_value(const char *key) {
     const IniKV *e = ini_last.n >= 0 ? ini_find(&ini_last, key) : NULL;
@@ -818,6 +818,7 @@ void cmds_tick(float dt) {
     signin_tick(dt);
     teamsize_tick(dt);
     hud_tick(dt);
+    runui_tick(dt);
     slotguard_tick(dt);
     chat_tick(dt);
     admin_tick(dt);
@@ -879,7 +880,7 @@ void cmds_run(char *line, Out *o) {
     } else if (!strcmp(verb, "call") && rest) {
         char *c = strtok(rest, " "), *f = strtok(NULL, " "), *cdo = strtok(NULL, " ");
         if (c && f) cmd_call(c, f, cdo && !strcmp(cdo, "cdo"), o); else out_printf(o, "usage: call <Class> <Func> [cdo]\n");
-    } else if (!steamnet_cmd(verb, rest, o) && !testing_cmd(verb, rest, o) && !teamsize_cmd(verb, rest, o) && !lineup_cmd(verb, rest, o) && !hud_cmd(verb, rest, o) &&
+    } else if (!steamnet_cmd(verb, rest, o) && !testing_cmd(verb, rest, o) && !teamsize_cmd(verb, rest, o) && !lineup_cmd(verb, rest, o) && !hud_cmd(verb, rest, o) && !runui_cmd(verb, rest, o) &&
                !slotguard_cmd(verb, rest, o) && !chat_cmd(verb, rest, o) && !admin_cmd(verb, rest, o) &&
                !presence_cmd(verb, rest, o) && !rewardguard_cmd(verb, rest, o) && !joinpolicy_cmd(verb, rest, o) &&
                !cheats_cmd(verb, rest, o) && !thirdperson_cmd(verb, rest, o) && !overlay_cmd(verb, rest, o) &&

@@ -62,7 +62,8 @@ const char *ue_name(FName n, char *buf, size_t len); // ASCII-folded
 const char *ue_obj_name(UObject *o, char *buf, size_t len);
 const char *ue_full_path(UObject *o, char *buf, size_t len);   // Outer.Chain.Name
 int ue_is_a(UObject *o, UClass *cls);
-UClass *ue_find_class(const char *name);            // short name, e.g. "PlayerController"
+UClass *ue_find_class(const char *name);            // short name, e.g. "PlayerController" (native classes only)
+UClass *ue_find_any_class(const char *name);        // native or Blueprint class, e.g. "TextButton_WBP_C"
 UObject *ue_find_first_of(const char *class_name);  // first non-CDO instance (IsA)
 UFunction *ue_find_function(UClass *cls, const char *name);
 FField *ue_find_prop(UStruct *st, const char *name);

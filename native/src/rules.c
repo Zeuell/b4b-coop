@@ -90,6 +90,14 @@ static int base_index(const char *row) {
     return -1;
 }
 
+int rules_baseline_count(void) { return nbase; }
+int rules_baseline_rows(char (*out)[64], int max) {
+    int n = nbase < max ? nbase : max;
+    for (int i = 0; i < n; i++) snprintf(out[i], 64, "%s", base_rows[i]);
+    return n;
+}
+int rules_baseline_has(const char *row) { return base_index(row) >= 0; }
+
 static int slot_has(void *slot, FName row) {
     TArray *a = SLOT_ACTIVE(slot);
     for (int i = 0; a->data && i < a->num; i++) { FName r = ACTIVE_ROW(a, i); if (r.idx == row.idx && r.num == row.num) return 1; }

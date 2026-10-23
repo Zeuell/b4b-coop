@@ -377,6 +377,14 @@ int rules_init(void);
 int rules_live(const char *key, const char *val);       // ini free_burncards=, baseline_cards=, baseline_cards_bots=
 void rules_slash(char *rest, Out *o);                   // chat /rules [free_burncards on|off | baseline ...] (CMD_HOST)
 int rules_free_burncards(void);                         // burncards.c: drop every burn-card charge
+int rules_baseline_count(void);                         // runui.c: the baseline list
+int rules_baseline_rows(char (*out)[64], int max);
+int rules_baseline_has(const char *row);
+// runui.c: the run rules on the game's create-run screen (MatchmakingSettingsPanel), built from the game's widgets
+int runui_init(void);
+void runui_tick(float dt);
+int runui_live(const char *key, const char *val);       // ini runui=0
+int runui_cmd(const char *verb, char *rest, Out *o);    // dev builds: `runui [rebuild|click <n>]`
 void rules_note_free_charge(const char *row);           // burncards.c: a charge was dropped by the rule (notice)
 // cheats.c card helpers shared with rules.c: a card = {its DataTable, its row name} (FDataTableRowHandle's first 2 fields)
 typedef struct { UObject *table; FName row; } CardRef;
@@ -386,6 +394,11 @@ UObject *cheats_slot_by_index(int32_t id, uint8_t team); // the UPlayerSlot with
 int cheats_card_each(UObject *gcm, void (*fn)(const CardRef *c, const char *row, const char *shown, void *ctx), void *ctx);  // GCM.AllCards; -1 none
 int cheats_card_find(UObject *gcm, const char *name, CardRef *out);   // exact row/shown name, or a unique substring; 1 found
 int cheats_card_add(UObject *gcm, UObject *slot, const CardRef *card); // GCM.AddGameplayCardToSlotByRowHandle; 1 called
+// every row of a card DataTable by object name (e.g. "PlayerCards_MASTER_DT"), with the card's shown name and its
+// GameplayCardRow flags (from the table's RowStruct; -1 = unknown field); -1 no table
+typedef struct { const char *row, *shown; int category, hidden, deckbuilding, pve_disabled; UObject *table; FName name; } CardRowInfo;
+int cheats_card_table_each(const char *table, void (*fn)(const CardRowInfo *c, void *ctx), void *ctx);
+UObject *cheats_new_object(UClass *cls, UObject *outer);  // StaticConstructObject_Internal(cls, outer), NULL if unavailable
 
 // updater.c: in-game updates from the ~ window's Updates tab (#34, docs/investigations/updater.md)
 int updater_early(void *module);        // DllMain: count a fresh update's starts, revert one that failed; 1 = start nothing

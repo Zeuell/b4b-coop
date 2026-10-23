@@ -574,6 +574,44 @@ int cheats_card_find(UObject *gcm, const char *name, CardRef *out) {
     out->table = h->table; out->row = h->row;
     return 1;
 }
+UObject *cheats_new_object(UClass *c, UObject *outer) {
+    if (!c || !outer || memcmp((void *)ADDR_SCO, SIG_SCO, sizeof SIG_SCO)) return NULL;
+    FName none = {0, 0};
+    return ((ScoFn)ADDR_SCO)(c, outer, none, 0, 0, NULL, 0, NULL, 0);
+}
+// every row of a card table found by its object name, with the shown name (GameplayCardRow.Name through
+// Conv_TextToString, as card_display); the card manager is not needed (Fort Hope has none)
+int cheats_card_table_each(const char *table, void (*fn)(const CardRowInfo *c, void *ctx), void *ctx) {
+    char nm[160];
+    UObject *t = NULL;
+    for (int32_t i = 0, n = ue_num_objects(); i < n && !t; i++) {
+        UObject *x = ue_object_at(i);
+        if (x && U_CLASS(x) && !(U_FLAGS(x) & 0x30) && !strcmp(ue_obj_name(x, nm, sizeof nm), table)) t = x;
+    }
+    TArray *m = t ? DT_ROWMAP(t) : NULL;
+    if (!m || !m->data) return -1;
+    // field offsets from the row struct (GameplayCardRow): a UScriptStruct, so ue_find_prop walks it like a class
+    UStruct *rs = ue_get_ptr(t, "RowStruct");
+    FField *fcat = rs ? ue_find_prop(rs, "Category") : NULL, *fhid = rs ? ue_find_prop(rs, "Hidden") : NULL,
+           *fdb = rs ? ue_find_prop(rs, "AllowedForDeckbuilding") : NULL, *fpve = rs ? ue_find_prop(rs, "DisabledForPvE") : NULL;
+    const uint32_t *bits = *(uint32_t *const *)((char *)m + 0x20);
+    if (!bits) bits = (const uint32_t *)((char *)m + 0x10);
+    int nbits = *(int32_t *)((char *)m + 0x28), count = 0;
+    char rn[128], dn[128];
+    for (int i = 0; i < m->num && i < nbits; i++) {
+        if (!((bits[i >> 5] >> (i & 31)) & 1)) continue;
+        char *e = (char *)m->data + (size_t)i * 0x18;
+        uint8_t *row = *(uint8_t **)(e + 8);
+        RowHandle h = {t, *(FName *)e, {0}};
+        ue_name(h.row, rn, sizeof rn);
+        card_display(&h, dn, sizeof dn);
+        CardRowInfo c = {rn, dn, fcat && row ? row[FP_OFFSET(fcat)] : -1, fhid && row ? row[FP_OFFSET(fhid)] != 0 : -1,
+                         fdb && row ? row[FP_OFFSET(fdb)] != 0 : -1, fpve && row ? row[FP_OFFSET(fpve)] != 0 : -1, t, h.row};
+        fn(&c, ctx);
+        count++;
+    }
+    return count;
+}
 int cheats_card_add(UObject *gcm, UObject *slot, const CardRef *card) {
     Call c;
     if (!gcm || !slot || !call_prep(&c, gcm, "AddGameplayCardToSlotByRowHandle")) return 0;

@@ -98,6 +98,20 @@ UClass *ue_find_class(const char *name) {
     return NULL;
 }
 
+// a class of any kind by short name: native (Class) or Blueprint (BlueprintGeneratedClass, WidgetBlueprintGeneratedClass,
+// ...), i.e. any object whose class derives from UClass's own class chain; skips SKEL_/REINST_ leftovers by exact name
+UClass *ue_find_any_class(const char *name) {
+    static UClass *cls_class;
+    if (!cls_class) cls_class = ue_find_class("Class");
+    int32_t n = ue_num_objects();
+    for (int32_t i = 0; i < n; i++) {
+        UObject *o = ue_object_at(i);
+        if (!o || !U_CLASS(o) || !name_eq(U_NAME(o), name)) continue;
+        for (UStruct *s = U_CLASS(o); s; s = US_SUPER(s)) if (s == cls_class || name_eq(U_NAME(s), "Class")) return o;
+    }
+    return NULL;
+}
+
 UObject *ue_find_first_of(const char *class_name) {
     UClass *c = ue_find_class(class_name);
     if (!c) return NULL;
