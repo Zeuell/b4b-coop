@@ -26,6 +26,8 @@ const string Usage = @"b4bmod <command> ...   (assets: /Game/... paths looked up
                                           its references to other renamed copies (e.g. an MI's textures);
                                           --import-class sets the class of what it imports from that (new) package
                                           (community packages sometimes import an MI as a Material)
+  dt <asset> [<row>] [--names]            data table rows and their fields (--names: row names only); a composite
+                                          table lists the tables it is made of
 Checks: texcheck <dir> (every texture re-writes byte-identically?), deps <asset>, props <asset>
 Common: --src <dir containing Gobi/> (default $B4B_EXTRACT, else %LOCALAPPDATA%\b4b-coop\extract on Windows,
 ~/.local/share/b4b-coop/extract elsewhere).
@@ -46,6 +48,7 @@ try
         case "rename": Commands.Rename(opt, opt.Pos(1), opt.Pos(2)); break;
         case "deps": Commands.Deps(opt, opt.Pos(1)); break;
         case "props": Commands.Props(opt, opt.Pos(1)); break;
+        case "dt": Commands.Dt(opt, opt.Pos(1), opt.Positional.Count > 2 ? opt.Pos(2) : null); break;
         default: Console.Error.WriteLine(Usage); return 2;
     }
 }
@@ -70,7 +73,7 @@ class Opts
             if (s is "-o" or "--out" or "--src" or "--mip" or "--quality") { if (i + 1 >= args.Length) throw new UsageException($"{s} needs a value"); Named[s == "-o" ? "--out" : s] = args[++i]; }
             else if (s is "--ref") { if (i + 1 >= args.Length) throw new UsageException("--ref needs old=new"); Refs.Add(args[++i]); }
             else if (s is "--import-class") { if (i + 1 >= args.Length) throw new UsageException("--import-class needs /Game/pkg=Class"); ImportClasses.Add(args[++i]); }
-            else if (s is "--resize") Flags.Add(s);
+            else if (s is "--resize" or "--names") Flags.Add(s);
             else Positional.Add(s);
         }
     }
@@ -582,6 +585,56 @@ static class Commands
             Console.WriteLine($"{p.Name} ({p.PropertyType}): {v}");
         }
         Console.WriteLine($"native tail {e.Extras.Length} bytes");
+    }
+
+    // ---- data tables: rows and their fields (read only). A CompositeDataTable has no rows of its own: its
+    // ParentTables are listed; dump those.
+    static string PropText(UAsset a, PropertyData p, int depth = 0)
+    {
+        switch (p)
+        {
+            case ObjectPropertyData ob: return ImportPath(a, ob.Value);
+            case SoftObjectPropertyData so: return so.Value.AssetPath.AssetName.ToString();
+            case NamePropertyData nm: return nm.Value.ToString();
+            case TextPropertyData tx: return tx.Value?.ToString() ?? (tx.CultureInvariantString?.ToString() ?? "");
+            case StrPropertyData st: return st.Value?.ToString() ?? "";
+            case EnumPropertyData en: return en.Value.ToString();
+            case BytePropertyData bp: return bp.ByteType == BytePropertyType.FName ? bp.EnumValue.ToString() : bp.Value.ToString();
+            case BoolPropertyData bo: return bo.Value ? "true" : "false";
+            case ArrayPropertyData ar: return "[" + string.Join(", ", ar.Value.Take(depth > 1 ? 4 : 40).Select(x => PropText(a, x, depth + 1))) + (ar.Value.Length > 40 ? ", ..." : "") + "]";
+            case StructPropertyData sp when depth < 3: return "{" + string.Join(", ", sp.Value.Select(x => $"{x.Name}={PropText(a, x, depth + 1)}")) + "}";
+            case StructPropertyData sp: return $"{{{sp.StructType} x{sp.Value.Count}}}";
+            case MapPropertyData mp: return "{" + string.Join(", ", mp.Value.Take(20).Select(kv => $"{PropText(a, kv.Key, depth + 1)}: {PropText(a, kv.Value, depth + 1)}")) + "}";
+            default: return p.RawValue?.ToString() ?? p.PropertyType.ToString();
+        }
+    }
+    public static void Dt(Opts o, string asset, string row)
+    {
+        var (file, _) = Resolve(o, asset);
+        var a = Load(file);
+        var e = MainExport(a);
+        if (e is not DataTableExport dt)
+        {
+            var parents = e.Data.OfType<ArrayPropertyData>().FirstOrDefault(p => p.Name.ToString() == "ParentTables");
+            if (parents == null) throw new Exception($"{asset}: {ClassOf(a, e)} is not a data table");
+            Console.WriteLine($"{asset}: {ClassOf(a, e)} of {parents.Value.Length} tables (dump each one):");
+            foreach (var p in parents.Value.OfType<ObjectPropertyData>()) Console.WriteLine("  " + ImportPath(a, p.Value));
+            return;
+        }
+        var rs = e.Data.OfType<ObjectPropertyData>().FirstOrDefault(p => p.Name.ToString() == "RowStruct");
+        var rows = dt.Table.Data.Where(r => row == null || string.Equals(r.Name.ToString(), row, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (row != null && rows.Count == 0) throw new Exception($"{asset}: no row '{row}' ({dt.Table.Data.Count} rows; `dt {asset}` lists them)");
+        if (o.Flags.Contains("--names"))
+        {
+            foreach (var r in rows) Console.WriteLine(r.Name);
+            return;
+        }
+        Console.WriteLine($"{asset}: {dt.Table.Data.Count} rows of {(rs != null ? ImportPath(a, rs.Value) : "?")}{(row != null ? $", row {row}" : "")}");
+        foreach (var r in rows)
+        {
+            Console.WriteLine($"[{r.Name}]");
+            foreach (var p in r.Value) Console.WriteLine($"  {p.Name} ({p.PropertyType}): {PropText(a, p)}");
+        }
     }
 
     // ---- dev: every texture under a dir parses and re-writes byte-identically

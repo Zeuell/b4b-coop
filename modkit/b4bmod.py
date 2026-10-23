@@ -16,6 +16,8 @@
                                           your PNG -> the game's texture (same format, full mip chain)
   mi <asset> [list]                       material instance parameters
   mi <asset> set <param> <value> [set <param> <value>...] [parent <path>] -o <moddir>
+  dt <asset> [<row>] [--names]            a data table's rows and fields (cards, difficulties, ...); --names: row
+                                          names only; a composite table lists the tables it is made of
   rename <asset> </Game/new/Path/Name> -o <moddir> [--ref </Game/old>=</Game/new>]...
                                           a copy of an asset as a NEW package (adds, replaces nothing); --ref points
                                           its references at other renamed copies (MI -> textures, mesh -> MIs)
@@ -850,7 +852,7 @@ def main(argv):
         return python_tool(os.path.join(KIT, "addon.py"), ["pack"] + rest)
     if cmd == "pak":   # advanced: plain mod pak for the dev build's modpaks= (no addoninfo)
         return python_tool(os.path.join(KIT, "b4bpak.py"), ["pack"] + rest)
-    if cmd in ("info", "tree", "export", "texture", "mi", "deps", "props", "texcheck", "rename"):
+    if cmd in ("info", "tree", "export", "texture", "mi", "dt", "deps", "props", "texcheck", "rename"):
         return cmd_dotnet(cmd, rest)
     die(f"unknown command {cmd!r} (b4bmod help)", 2)
 

@@ -100,6 +100,7 @@ Add-ons tab, the game's customization screen, or `/model <name>`).
 | `find "<regex>"` | search the game's asset paths (`/Game/...`) |
 | `extract <asset or "folder/*">` | copy game files out of the paks (the other commands do this for what they need) |
 | `info`, `tree <asset>` | what an asset is; mesh → materials → textures |
+| `dt <asset> [<row>] [--names]` | a data table's rows and fields (cards, difficulties, spawn weights); `--names` lists row names only |
 | `export <texture> <out.png>`, `texture <texture> <in.png> -o <moddir>` | texture to PNG and back |
 | `mi <material instance> [set <param> <value>...] -o <moddir>` | material parameters |
 | `rename <asset> </Game/new/path> -o <moddir> [--ref old=new]...` | a copy of an asset under a new path (textures, materials, meshes); experimental, see docs/textures.md |
@@ -141,7 +142,7 @@ Add-ons tab, the game's customization screen, or `/model <name>`).
   (`setup` downloading .NET and UAssetAPI) through `find`, `extract`, `tree`, `export`, `texture`, `mi`, `mesh
   export/import` (FBX and glTF), `survivor` and `weapon` (FBX), `pack`, `install`, `check`. Extracted files are byte-identical to what the running
   game reads (801/801 files of a survivor).
-- **Windows**: not yet run on a Windows PC. Run under Wine with Windows Python 3.12: `b4bmod.cmd`, `status`,
+- **Windows** (Windows 11, Python 3.14, Git Bash): `setup` (the PowerShell .NET install and both .NET tools), `status`, `find`, `extract`, `info`, `props`, `dt`. Earlier, under Wine with Windows Python 3.12: `b4bmod.cmd`, `status`,
   `config`, `mesh info/export/import`, `pack`, `install`, `check`, `uninstall` (Windows paths, `%LOCALAPPDATA%`);
   the add-on it packed is byte-identical to the Linux one. Not run on Windows: `setup` (PowerShell .NET install)
   and the two .NET tools (`find`, `extract`, `info`, `tree`, `export`, `texture`, `mi`), because .NET 10 doesn't
