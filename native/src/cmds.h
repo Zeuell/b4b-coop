@@ -372,6 +372,13 @@ void cheats_tick(float dt);
 int rewards_execute_local(UObject *ppc, void *cmd);     // rewards.c: a profile command on this machine's own profile
 int cheats_cmd(const char *verb, char *rest, Out *o);   // dev builds: `cheat <cmd> ...`, `cheatprobe ...`
 
+// rules.c: the host's run rules (~ window Run tab, ini keys; host-side only, docs/investigations/run-rules.md)
+int rules_init(void);
+int rules_live(const char *key, const char *val);       // ini free_burncards=
+void rules_slash(char *rest, Out *o);                   // chat /rules [free_burncards on|off] (CMD_HOST)
+int rules_free_burncards(void);                         // burncards.c: drop every burn-card charge
+void rules_note_free_charge(const char *row);           // burncards.c: a charge was dropped by the rule (notice)
+
 // updater.c: in-game updates from the ~ window's Updates tab (#34, docs/investigations/updater.md)
 int updater_early(void *module);        // DllMain: count a fresh update's starts, revert one that failed; 1 = start nothing
 void updater_init(void);

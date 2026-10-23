@@ -170,6 +170,11 @@ static UObject *findppc_detour(UObject *ctx, FString *id) {
     if (!id || !id->data || id->num < (int)pl + 1 || wcsncmp(id->data, KEY_PREFIX, pl)) return orig_findppc(ctx, id);
     int k = (int)wcstol(id->data + pl, NULL, 10);
     if (k < 0 || k >= NKEYS) return NULL;
+    if (rules_free_burncards()) {   // host rule (rules.c): no profile to charge = the game drops the charge
+        char who[16]; snprintf(who, sizeof who, "b4bcoop.burn.%d", k);
+        rules_note_free_charge(who);
+        return NULL;
+    }
     UObject *pc = keys[k].pc;
     // a remote player's old controller can outlive its connection until the next GC: no connection = gone
     int live = pc && ue_object_at(keys[k].idx) == pc && (!keys[k].remote || ue_get_ptr(pc, "Player"));

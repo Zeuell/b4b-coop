@@ -201,6 +201,10 @@ Detailed engine findings (addresses, obfuscated layouts, class names): `docs/NOT
     clients guess by position until then), the next owner's own choice applies; world pickups and the dropped magazine
     stay retail; `~` Add-ons tab: Use / Stop on the add-on's row; dev `wlook dump|swap|select|drop|drophero|row|pickups|use|guess` (new-assets.md §9).
     docs/investigations/model-swap.md, player page docs/commands-models.md.
+  - `rules.c` the host's run rules (`~` tab **Run**, order 55; chat `/rules`, CMD_HOST; ini keys, live): host-side
+    only, no protocol bump, the players hear a chat notice. `free_burncards=1`: burncards.c's `FindPPCByHydraId`
+    detour returns NULL for every `b4bcoop.burn.<n>` key (`rules_free_burncards`), so the game's saferoom charge is
+    dropped for host and clients (`rules_note_free_charge` notices once per 10 s). docs/investigations/run-rules.md.
   - `cheats.c` Cheats: opt-in, host-only sandbox through chat (`/cheats on|off`, then `/god /heal /revive /ammo /copper
     /card /fly /noclip /walk /tp /freecam /size /horde /director /spawn /killall /freeze /slomo /win /lose`); own-save
     cheats `/supply /skulls /burncards /unlockall` (#49, `CMD_OWNSAVE`): every player while the session has cheats on,

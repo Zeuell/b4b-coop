@@ -670,6 +670,7 @@ static const struct { const char *name; int perm; const char *usage; } CMDS[] = 
     {"bans", CMD_HOST, "/bans"}, {"lock", CMD_HOST, "/lock"}, {"unlock", CMD_HOST, "/unlock"}, {"teamsize", CMD_HOST, "/teamsize N"},
     {"restart", CMD_HOST, "/restart"}, {"ready", CMD_HOST, "/ready [vote]"}, {"bots", CMD_HOST, "/bots on|off|default"},
     {"say", CMD_HOST, "/say <message>"}, {"handoff", CMD_ANYONE, "/handoff [<name|#>]"},   // host part checked in handoff.c
+    {"rules", CMD_HOST, "/rules [free_burncards on|off]"},   // rules.c: the host's run rules (~ Run tab)
     {"model", CMD_ANYONE, "/model list|<name>|reset"}, {"models", CMD_ANYONE, "/models [on|off]"},   // host parts checked in models.c
     {"addons", CMD_ANYONE, "/addons [on|off|info <#>|policy]"}, {"addon", CMD_ANYONE, "/addons [on|off|info <#>|policy]"},
 };
@@ -727,6 +728,7 @@ void admin_slash(char *line, Out *o) {
     else if (!strcmp(verb, "model") || !strcmp(verb, "models")) models_slash(verb, rest, o);
     else if (!strcmp(verb, "addons") || !strcmp(verb, "addon")) addons_slash(verb, rest, o);
     else if (!strcmp(verb, "handoff")) handoff_slash(rest, o);
+    else if (!strcmp(verb, "rules")) rules_slash(rest, o);
     else if (!strcmp(verb, "join")) {
         if (!rest || !*rest) { out_printf(o, "usage: %s\n", CMDS[i].usage); return; }
         out_printf(o, "joining %s ...\n", rest);

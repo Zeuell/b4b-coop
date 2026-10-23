@@ -62,6 +62,9 @@ cat > "$ini" <<'INI'
 ;bot_heal_requests=1
 ;bot_toolkit_doors=0
 
+; Host only, run rules (~ window, tab Run): burn cards are never used up in your game (nobody is charged).
+;free_burncards=1
+
 ; Host only: who may join. Default: only your Steam friends. "anyone" also lets in people who aren't.
 ;allow_joins=friends
 ; Host only: always let these Steam IDs in (17-digit Steam IDs, comma-separated), friends or not.
