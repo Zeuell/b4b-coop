@@ -97,13 +97,6 @@ static int spot_ok(UObject *w, const float cand[3], float out[3], float slack, c
     memcpy(out, pr, 12);
     return 1;
 }
-static int room_enabled(UObject *room) {   // RoomVolume::IsRoomEnabled (the LSS trims the inactive treasure rooms)
-    uint8_t p[16] = {0};
-    int32_t orv = poff(room, "IsRoomEnabled", "ReturnValue");
-    if (orv < 0 || call_parms(room, "IsRoomEnabled", p, sizeof p)) return -1;
-    return p[orv] != 0;
-}
-
 // a quaternion's forward (X) and right (Y) axes
 static void axes(const float q[4], float fwd[3], float right[3]) {
     float x = q[0], y = q[1], z = q[2], w = q[3];
@@ -150,25 +143,43 @@ static int collect(UObject *w, UObject **out, int max, UObject **vendor_out, int
     return n;
 }
 
-// the map's treasure room: a RoomVolume actor named RoomVolume_Treasure*; its bounds give the centre and the floor
+// the map's treasure room: a RoomVolume actor named RoomVolume_Treasure*; its bounds give the centre and the floor.
+// A map can have two of them with one trimmed by the LSS (the volume itself carries no flag: Type, Group only), so
+// the one the loot pass filled wins: the most ItemPickup actors (every spawned pickup, shrines included) inside it.
+static int bounds_of(UObject *o, float center[3], float ext[3]) {
+    uint8_t p[64] = {0};
+    int32_t oo = poff(o, "GetActorBounds", "Origin"), oe = poff(o, "GetActorBounds", "BoxExtent");
+    if (oo < 0 || oe < 0 || call_parms(o, "GetActorBounds", p, sizeof p)) return 0;
+    memcpy(center, p + oo, 12); memcpy(ext, p + oe, 12);
+    return 1;
+}
 static int treasure_room(UObject *w, float center[3], float ext[3]) {
-    static UClass *c_actor;
+    static UClass *c_actor, *c_pickup;
     if (!c_actor) c_actor = ue_find_class("Actor");
+    if (!c_pickup) c_pickup = ue_find_class("ItemPickup");
+    UObject *rooms[8]; float rc[8][3], re[8][3]; int score[8] = {0}, nr = 0;
+    UObject *picks[512]; int np = 0;
     char n[96];
     for (int32_t i = 0, cnt = ue_num_objects(); i < cnt; i++) {
         UObject *o = ue_object_at(i);
         if (!o || (U_FLAGS(o) & 0x30) || !U_CLASS(o) || !ue_is_a(o, c_actor) || !ue_object_usable(o, i) || !in_world(o, w)) continue;
-        if (strncmp(ue_obj_name(o, n, sizeof n), "RoomVolume_Treasure", 19)) continue;
-        if (room_enabled(o) == 0) continue;   // the trimmed twin
-        uint8_t p[64] = {0};
-        int32_t oo = poff(o, "GetActorBounds", "Origin"), oe = poff(o, "GetActorBounds", "BoxExtent"), oc = poff(o, "GetActorBounds", "bOnlyCollidingComponents");
-        if (oo < 0 || oe < 0) return 0;
-        if (oc >= 0) p[oc] = 0;
-        if (call_parms(o, "GetActorBounds", p, sizeof p)) return 0;
-        memcpy(center, p + oo, 12); memcpy(ext, p + oe, 12);
-        return 1;
+        if (c_pickup && ue_is_a(o, c_pickup)) { if (np < 512) picks[np++] = o; continue; }
+        if (nr < 8 && !strncmp(ue_obj_name(o, n, sizeof n), "RoomVolume_Treasure", 19) && bounds_of(o, rc[nr], re[nr])) rooms[nr++] = o;
     }
-    return 0;
+    if (!nr) return 0;
+    int best = 0;
+    if (nr > 1) {
+        for (int k = 0; k < np; k++) {
+            Xform x;
+            if (get_xform(picks[k], &x)) continue;
+            for (int r = 0; r < nr; r++)
+                if (fabsf(x.t[0] - rc[r][0]) <= re[r][0] && fabsf(x.t[1] - rc[r][1]) <= re[r][1] && fabsf(x.t[2] - rc[r][2]) <= re[r][2] + 100) score[r]++;
+        }
+        for (int r = 1; r < nr; r++) if (score[r] > score[best]) best = r;
+        LOG("intel: %d treasure rooms, %s has the loot (%d pickup(s) vs %d)", nr, ue_obj_name(rooms[best], n, sizeof n), score[best], score[best ? 0 : 1]);
+    }
+    memcpy(center, rc[best], 12); memcpy(ext, re[best], 12);
+    return 1;
 }
 static int move_treasure(UObject *w, Out *o) {
     UObject *shr[MAX_MOVED];
@@ -314,10 +325,9 @@ int intel_cmd(const char *verb, char *rest, Out *o) {
             UObject *x = ue_object_at(i);
             if (!x || (U_FLAGS(x) & 0x30) || !U_CLASS(x) || !ue_is_a(x, c_actor) || !ue_object_usable(x, i) || !in_world(x, w)) continue;
             if (strncmp(ue_obj_name(x, on, sizeof on), "RoomVolume", 10)) continue;
-            uint8_t p[64] = {0}; float c[3] = {0}, e[3] = {0};
-            int32_t oo = poff(x, "GetActorBounds", "Origin"), oe = poff(x, "GetActorBounds", "BoxExtent");
-            if (oo >= 0 && oe >= 0 && !call_parms(x, "GetActorBounds", p, sizeof p)) { memcpy(c, p + oo, 12); memcpy(e, p + oe, 12); }
-            out_printf(o, "  %-28s enabled %d  centre (%.0f %.0f %.0f) extent (%.0f %.0f %.0f)\n", on, room_enabled(x), c[0], c[1], c[2], e[0], e[1], e[2]);
+            float c[3] = {0}, e[3] = {0};
+            bounds_of(x, c, e);
+            out_printf(o, "  %-28s centre (%.0f %.0f %.0f) extent (%.0f %.0f %.0f)\n", on, c[0], c[1], c[2], e[0], e[1], e[2]);
         }
         return 1;
     }

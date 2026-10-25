@@ -160,3 +160,17 @@ place before anyone sees them; a client gets the replicated move like any other.
 (28028 -470 160) beside SafeRoomVendor_BP_2`); Zeuell saw them in a line level with the vendor, one inside the crate
 pile; re-placed live 1.4 m in front: all reachable and buyable ("HOLD TO BUY 500"). The Basic stand is the free one
 (his read: "1 random intel card (generic)"), so the class is excluded from then on.
+
+### Placement rules (second pass, same day)
+- Every spot goes through `NavigationSystemV1::K2_ProjectPointToNavigation` (extent slack+40 / 160): no walkable
+  point within the slack (35 by the vendor, 30 in the room) = refused; the projected point is the floor. The
+  saferoom row then tries the same spot 60/120/180 further out, then one gap further to the side. The room takes
+  the free navmesh spots nearest its centre on a 60 grid, `lay_gap` apart.
+- `RoomVolume` reflects only `Type` (UInt32 @728), `Group` (@736), `AssociatedActors`; `IsRoomEnabled` is not a
+  UFunction and the LSS's room status (`ERoomVolumeStatus`) is not reflected (`LootSpawnSubsystem` has only the
+  tables/mods arrays). Two treasure volumes: the one with the most `ItemPickup` actors (the class every spawned
+  pickup and shrine derives from: `CardShrine_WildCard_BP_C` -> `CardShrine_VendorBase_BP_C` -> `ItemPickupBase_BP_C`
+  -> `ItemPickup_BP_C` -> `ItemPickup`) inside its bounds is the one the loot pass filled.
+- Live, Evansburgh A: `treasure` put 3-4 Wild Card stands on the floor around the room centre (24699 2168, extent
+  408 x 237 x 212), 120 apart; the room's own card spawner's stand among them. Dev `props <object>` (poststats.c)
+  lists any object's reflected properties with values.

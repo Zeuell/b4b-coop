@@ -223,7 +223,10 @@ Detailed engine findings (addresses, obfuscated layouts, class names): `docs/NOT
     stands (`*Shrine*_BP_C` actors but `CardShrine_Basic`, the free one; the LSS spawns them in one pass at mission
     start) are teleported from the tick (`K2_SetActorTransform`, once per actor per world) to a row in front of the
     start saferoom's vendor (`SafeRoomVendor_BP_C` nearest the host's hero; `intel_layout`) or onto the floor of
-    `RoomVolume_Treasure*` (`GetActorBounds`). Free card pickups untouched. Dev `intel [list|move|room|layout a s g|
+    `RoomVolume_Treasure*` (`GetActorBounds`; two volumes = the one with the most `ItemPickup` actors inside, the LSS
+    trims the other and the volume has no flag). Every spot is projected onto the navmesh first
+    (`NavigationSystemV1::K2_ProjectPointToNavigation`, refused when nothing walkable is within reach or another
+    stand is too close); the free pickups untouched, `intel_basic=1` moves the Basic stand too. Dev `intel [list|move|room|layout a s g|
     reset]`. run-rules.md §4.
   - `cheats.c` Cheats: opt-in, host-only sandbox through chat (`/cheats on|off`, then `/god /heal /revive /ammo /copper
     /card /fly /noclip /walk /tp /freecam /size /horde /director /spawn /killall /freeze /slomo /win /lose`); own-save

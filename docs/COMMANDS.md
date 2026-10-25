@@ -799,6 +799,7 @@ join=steam:7656119XXXXXXXXXX
 | `baseline_cards` | (none) | Host (`~` Run tab, `/rules baseline`): comma-separated card row names every survivor gets on top of their deck when a mission grants it, e.g. `Scavenger_Weapons,Talent_ShareTheWealth,Talent_DownInFront`. Up to 16 |
 | `baseline_cards_bots` | `1` | `0`: the bots don't get the baseline cards |
 | `intel_cards` | `off` | Host (`~` Run tab, `/rules intel`): `saferoom` = the purchasable card stands of every map in front of the start saferoom's vendor; `treasure` = in the treasure room |
+| `intel_basic` | `0` | `1`: the free Basic card stand goes along with the purchasable ones |
 | `intel_layout` | `140 110 95` | `saferoom` row: units in front of the vendor, to its sides, between stands |
 | `runui` | `1` | `0`: no DEFAULT CARDS panel on the create-run screen (the `~` Run tab and `/rules` stay) |
 | `bot_heal_requests` | `0` | Host (`~` Cheats tab, works without cheats): `1` = a player's heal key sends the nearest bot with a healing item to heal them. `0`: the game's own healing only; a client's request gets `The host has heal requests off.`, the host's own key says how to turn it on |

@@ -194,6 +194,35 @@ int poststats_cmd(const char *verb, char *rest, Out *o) {
         out_printf(o, "%d function(s)\n", n);
         return 1;
     }
+    if (!strcmp(verb, "props") && rest) {   // props <object name> [all]: an object's properties with offsets and plain values
+        char nm[128], tn[64];
+        char *name = strtok(rest, " "), *all = strtok(NULL, " ");
+        UObject *x = NULL;
+        for (int i = 0, m = ue_num_objects(); i < m && !x; i++) {
+            UObject *y = ue_object_at(i);
+            if (y && U_CLASS(y) && !(U_FLAGS(y) & 0x30) && !strcmp(ue_obj_name(y, nm, sizeof nm), name)) x = y;
+        }
+        if (!x) { out_printf(o, "no object %s\n", name); return 1; }
+        out_printf(o, "%s (%s)\n", name, ue_obj_name(U_CLASS(x), nm, sizeof nm));
+        for (UStruct *st = U_CLASS(x); st; st = US_SUPER(st)) {
+            if (!all && !strcmp(ue_obj_name(st, nm, sizeof nm), "Actor")) break;   // the engine's own stop here unless `all`
+            out_printf(o, " [%s]\n", ue_obj_name(st, nm, sizeof nm));
+            for (FField *f = US_CHILDPROPS(st); f; f = FF_NEXT(f)) {
+                const char *t = ue_name(*(FName *)FF_CLASS(f), tn, sizeof tn);
+                const char *v = (const char *)x + FP_OFFSET(f);
+                char val[160] = "";
+                if (!strcmp(t, "BoolProperty")) snprintf(val, sizeof val, "= 0x%02x", (unsigned)*(const uint8_t *)v);
+                else if (!strcmp(t, "IntProperty")) snprintf(val, sizeof val, "= %d", *(const int32_t *)v);
+                else if (!strcmp(t, "FloatProperty")) snprintf(val, sizeof val, "= %g", *(const float *)v);
+                else if (!strcmp(t, "ByteProperty") || !strcmp(t, "EnumProperty")) snprintf(val, sizeof val, "= %u", (unsigned)*(const uint8_t *)v);
+                else if (!strcmp(t, "NameProperty")) { char b[96]; snprintf(val, sizeof val, "= %s", ue_name(*(const FName *)v, b, sizeof b)); }
+                else if (!strcmp(t, "ObjectProperty") || !strcmp(t, "ClassProperty")) { UObject *r = *(UObject *const *)v; char b[96]; snprintf(val, sizeof val, "= %s", r ? ue_obj_name(r, b, sizeof b) : "null"); }
+                else if (!strcmp(t, "ArrayProperty")) snprintf(val, sizeof val, "num %d", ((const TArray *)v)->num);
+                out_printf(o, "  %-36s %-16s @%-4d %s\n", ue_name(FF_NAME(f), nm, sizeof nm), t, FP_OFFSET(f), val);
+            }
+        }
+        return 1;
+    }
     if (strcmp(verb, "poststats")) return 0;
     dump(emit_out, o);
     return 1;
