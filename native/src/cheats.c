@@ -508,6 +508,9 @@ static UObject *slot_of(UObject *pawn) {
     return NULL;
 }
 
+// ---- shared with rules.c / intel.c ----
+int cheats_in_mission(void) { return in_mission(); }
+int cheats_in_world(UObject *o, UObject *w) { return o && w && in_world(o, w); }
 // ---- shared with rules.c (baseline cards): the card list, a card by name, a card into a slot ----
 UObject *cheats_card_manager(void) { return card_manager(); }
 UObject *cheats_slot_for_ps(UObject *ps) {

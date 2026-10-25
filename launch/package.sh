@@ -67,6 +67,8 @@ cat > "$ini" <<'INI'
 ;free_burncards=1
 ;baseline_cards=Scavenger_Weapons,Talent_ShareTheWealth,Talent_DownInFront
 ;baseline_cards_bots=0
+; Host only: the purchasable card stands of every map in one place: saferoom (in front of the start vendor) or treasure.
+;intel_cards=saferoom
 
 ; Host only: who may join. Default: only your Steam friends. "anyone" also lets in people who aren't.
 ;allow_joins=friends

@@ -399,6 +399,16 @@ int cheats_card_add(UObject *gcm, UObject *slot, const CardRef *card); // GCM.Ad
 typedef struct { const char *row, *shown; int category, hidden, deckbuilding, pve_disabled; UObject *table; FName name; } CardRowInfo;
 int cheats_card_table_each(const char *table, void (*fn)(const CardRowInfo *c, void *ctx), void *ctx);
 UObject *cheats_new_object(UClass *cls, UObject *outer);  // StaticConstructObject_Internal(cls, outer), NULL if unavailable
+int cheats_in_mission(void);                              // the authority game mode is a MissionGameMode
+int cheats_in_world(UObject *o, UObject *w);              // o's level (persistent or streamed) belongs to world w
+// intel.c: where the purchasable card stands (shrines) of a map go (host run rule; run-rules.md §4)
+int intel_init(void);
+void intel_tick(float dt);
+int intel_live(const char *key, const char *val);        // ini intel_cards=off|saferoom|treasure, intel_layout=
+void intel_slash(const char *arg, Out *o);               // chat /rules intel ...
+int intel_mode(void);                                    // 0 off, 1 saferoom, 2 treasure
+const char *intel_mode_name(void);
+int intel_cmd(const char *verb, char *rest, Out *o);     // dev `intel [list|move|layout a s g|reset]`
 
 // updater.c: in-game updates from the ~ window's Updates tab (#34, docs/investigations/updater.md)
 int updater_early(void *module);        // DllMain: count a fresh update's starts, revert one that failed; 1 = start nothing

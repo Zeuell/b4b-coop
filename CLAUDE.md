@@ -219,6 +219,12 @@ Detailed engine findings (addresses, obfuscated layouts, class names): `docs/NOT
     `cheats_card_table_each` (deck-buildable + Hero*Ability), no card manager needed. Blueprint classes come from
     `ue_find_any_class` (ue_find_class is native-only) and are looked up when the panel appears (they load with the
     menus). Ini `runui=0`; dev `runui [rebuild|click <n>]`. run-rules.md §3.
+  - `intel.c` host run rule `intel_cards=off|saferoom|treasure` (Run tab, `/rules intel`): the map's purchasable card
+    stands (`*Shrine*_BP_C` actors but `CardShrine_Basic`, the free one; the LSS spawns them in one pass at mission
+    start) are teleported from the tick (`K2_SetActorTransform`, once per actor per world) to a row in front of the
+    start saferoom's vendor (`SafeRoomVendor_BP_C` nearest the host's hero; `intel_layout`) or onto the floor of
+    `RoomVolume_Treasure*` (`GetActorBounds`). Free card pickups untouched. Dev `intel [list|move|room|layout a s g|
+    reset]`. run-rules.md §4.
   - `cheats.c` Cheats: opt-in, host-only sandbox through chat (`/cheats on|off`, then `/god /heal /revive /ammo /copper
     /card /fly /noclip /walk /tp /freecam /size /horde /director /spawn /killall /freeze /slomo /win /lose`); own-save
     cheats `/supply /skulls /burncards /unlockall` (#49, `CMD_OWNSAVE`): every player while the session has cheats on,

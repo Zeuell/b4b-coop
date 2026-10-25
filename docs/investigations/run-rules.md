@@ -129,3 +129,34 @@ click), the picker shows 203 cards in the game's own card art, a click toggles a
 Found on the way: `ue_find_class` misses Blueprint classes (silent NULLs), the archetype widgets shadow the live
 screen, UMG reflection resolves late (as hud.c knew), the dev `peek` command crashes the game on a bad address
 (never run it with a guessed argument).
+
+## 4. Purchasable card stands in one place (`intel.c`, `intel_cards=off|saferoom|treasure`)
+
+The game's Loot Spawn System (LSS, server, one pass per map: `LSS Init Rooms` -> `Selected - <item tag> ... <spawner>`
+-> `SpawnItems - Spawned=N`, string xrefs 0x14190e043 / 0x141913d32 / 0x141910f9d) hands every level-placed loot
+spawner an item. The card items (`/Game/Items/Tables/Cards_DT`, a GuidDataTable the modkit's `dt` can't read yet;
+its import list names the classes) are actors: the free pickups `FreeCardDraw_BP`, `Card_DeckDraw_Pickup_BP`
+(`Items.Cards.RandomCard`, the "intel files", `IntelFiles_Count_1` spawners) and `CardShrine_Basic_BP`
+(`Items.Cards.Basic`, a free random card), and the stands a player buys a card from: `CardShrine_WildCard_BP`,
+`Shrine_ScavengerCard_BP`, `Shrine_UpgradeCard_BP`, `CardShrine_Legendary_BP` (`Cost`). One shrine spawner sits in the
+map's treasure room (`LootSpawner_Cards_BP3_2` under `RoomVolume_Treasure1` in Evansburgh A); the others anywhere.
+
+### The rule
+Host, no hook: from the tick, in a mission, twice a second, every shrine actor of the current world (class name
+`*Shrine*_BP_C`, not `PVP`, not `Shrine_Basic`; `cheats_in_world` covers the streamed `_Loot` sublevel) that was not
+moved yet is teleported with the game's `K2_SetActorTransform` (bTeleport):
+- `saferoom`: a row 1.4 m in front of the start saferoom's vendor (`SafeRoomVendor_BP_C` nearest to the host's hero),
+  1.1 m apart alternating right/left, facing as the vendor does (the vendor's quaternion -> forward/right axes).
+  Defaults tuned live (`intel layout 140 110 95`): the first try (0, 180, 110) put the row through the crates
+  behind the vendor.
+- `treasure`: a row on the floor through the centre of `RoomVolume_Treasure*` along its longer side (`GetActorBounds`
+  origin/extent; floor = origin.z - extent.z + 10). A map without such a volume keeps the game's placement.
+One log line per stand, one chat notice per map. The LSS spawns before the heroes can move, so the stands are in
+place before anyone sees them; a client gets the replicated move like any other.
+
+### Live (2026-10-25, Evansburgh A "Resurgence", host + 3 bots)
+`intel list`: 1 vendor, 14 `LootSpawner_Holdout_Crate_Card_DeckDraw` pickups, 4 shrines (3 WildCard, 1 Basic).
+`saferoom`: all four moved beside the vendor (log `intel: CardShrine_WildCard_BP_C_... moved (29235 1085 960) ->
+(28028 -470 160) beside SafeRoomVendor_BP_2`); Zeuell saw them in a line level with the vendor, one inside the crate
+pile; re-placed live 1.4 m in front: all reachable and buyable ("HOLD TO BUY 500"). The Basic stand is the free one
+(his read: "1 random intel card (generic)"), so the class is excluded from then on.

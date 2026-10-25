@@ -185,6 +185,7 @@ void rules_slash(char *rest, Out *o) {
         admin_notice(on ? "host rule: burn cards are free this session (never used up)" : "host rule: burn cards are charged again");
         return;
     }
+    if (k && !strcmp(k, "intel")) { intel_slash(v, o); return; }
     if (k && !strcmp(k, "baseline")) {
         char *sub = v ? strtok(v, " ") : NULL, *arg = sub ? strtok(NULL, "") : NULL;
         if (sub && !strcmp(sub, "clear")) { nbase = 0; base_save(); out_printf(o, "baseline cards: none\n"); return; }
@@ -219,10 +220,10 @@ void rules_slash(char *rest, Out *o) {
         out_printf(o, "usage: /rules baseline add|remove <card> | clear | list | bots on|off\n");
         return;
     }
-    if (k) { out_printf(o, "usage: /rules [free_burncards on|off | baseline add|remove <card>|clear|list|bots on|off]\n"); return; }
+    if (k) { out_printf(o, "usage: /rules [free_burncards on|off | baseline add|remove <card>|clear|list|bots on|off | intel off|saferoom]\n"); return; }
     char all[512]; base_join(all, sizeof all);
-    out_printf(o, "run rules (host): free burn cards %s; baseline cards: %s%s\n", free_burncards ? "on" : "off",
-               nbase ? all : "none", base_bots || !nbase ? "" : " (bots left out)");
+    out_printf(o, "run rules (host): free burn cards %s; baseline cards: %s%s; card stands: %s\n", free_burncards ? "on" : "off",
+               nbase ? all : "none", base_bots || !nbase ? "" : " (bots left out)", intel_mode_name());
 }
 
 // ---- the ~ window's Run tab ----
@@ -266,6 +267,17 @@ static void panel(void) {
     ov_tooltip("Host only. Burn cards played in the start saferoom are never used up: the charge the game makes when "
                "the team leaves the saferoom is dropped, for you and for everyone in your game. Players still need "
                "to own at least one of a card to play it. Saved in b4bcoop.ini (free_burncards).");
+
+    ov_heading("Purchasable card stands");
+    ov_text_dim("Where the card stands you buy cards from (not the free card pickups) are placed when a mission starts.");
+    if (ov_radio("Where the game puts them##intel0", intel_mode() == 0)) ov_run("rules intel off");
+    ov_same_line();
+    if (ov_radio("In the start saferoom, by the vendor##intel1", intel_mode() == 1)) ov_run("rules intel saferoom");
+    ov_same_line();
+    if (ov_radio("In the treasure room##intel2", intel_mode() == 2)) ov_run("rules intel treasure");
+    ov_tooltip("Host only. Right after the game places a map's loot, every purchasable card stand is moved: in a row in front "
+               "of the start saferoom's vendor, or onto the floor of the map's treasure room (a map without one keeps "
+               "the game's placement). The free card pickups stay where they are. Saved in b4bcoop.ini (intel_cards).");
 
     ov_heading("Baseline cards");
     ov_text_dim("Cards every survivor gets on top of their own deck, when a mission starts or they join one. "

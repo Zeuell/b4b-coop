@@ -302,6 +302,11 @@ written to the other players' saves. `/rules` alone shows them.
   defaults; **Done**), and **Burn cards are free** toggles that rule. The grid needs the deck editor to have been
   opened once since the game started (the game loads it then); until then the button says so in the log and the
   `~` window's Run tab or `/rules` do the same job. `runui=0` in `b4bcoop.ini` removes the panel.
+- **`/rules intel off|saferoom|treasure`** — **Purchasable card stands** (the stands you buy a card from; not the free
+  card pickups): where the game put them (`off`), all in a row in front of the start saferoom's vendor (`saferoom`),
+  or on the floor of the map's treasure room (`treasure`; a map without one keeps the game's placement). Moved by
+  the host right after the game places the map's loot; everyone sees them there. Saved in `b4bcoop.ini`
+  (`intel_cards=saferoom`). Run tab: "Purchasable card stands".
 - **`/rules baseline add <card>`**, **`remove <card>`**, **`clear`**, **`list`**, **`bots on|off`** — **Baseline
   cards**: cards every survivor gets on top of their own 15-card deck. When the game hands a survivor their deck (at
   the mission start, and when a player joins a mission and takes over a bot), each baseline card they don't have yet
@@ -639,7 +644,7 @@ Rules:
 - No `b4bcoop.ini` at all = all defaults.
 - **Applied while the game runs:** `thirdperson`, `thirdperson_key`, `thirdperson_distance`, `thirdperson_side`,
   `thirdperson_height`, `thirdperson_fov`, `thirdperson_aimfix`, `thirdperson_freelook`,
-  `flashlight_key`, `flashlight_sticky`, `bot_heal_key`, `bot_heal_requests`, `bot_toolkit_doors`, `free_burncards`, `baseline_cards`, `baseline_cards_bots`,
+  `flashlight_key`, `flashlight_sticky`, `bot_heal_key`, `bot_heal_requests`, `bot_toolkit_doors`, `free_burncards`, `baseline_cards`, `baseline_cards_bots`, `intel_cards`, `intel_layout`,
   `flashlight_width`, `flashlight_range`, `flashlight_brightness`,
   `allow_joins`, `allow_steamids`, `presence`, `teamsize` (from the next map), `overlay`, `overlay_key`,
   `overlay_scale`, `addons_policy`, `updates`, `host_handoff`, `launch` and `auto_update` (both read at the next game start). Only the lines you changed count: an edit doesn't undo what you set with a chat command this
@@ -793,6 +798,8 @@ join=steam:7656119XXXXXXXXXX
 | `free_burncards` | `0` | Host (`~` Run tab, `/rules`): `1` = burn cards played in your game are never used up (the saferoom charge is dropped for every player). Players still need to own a card to play it |
 | `baseline_cards` | (none) | Host (`~` Run tab, `/rules baseline`): comma-separated card row names every survivor gets on top of their deck when a mission grants it, e.g. `Scavenger_Weapons,Talent_ShareTheWealth,Talent_DownInFront`. Up to 16 |
 | `baseline_cards_bots` | `1` | `0`: the bots don't get the baseline cards |
+| `intel_cards` | `off` | Host (`~` Run tab, `/rules intel`): `saferoom` = the purchasable card stands of every map in front of the start saferoom's vendor; `treasure` = in the treasure room |
+| `intel_layout` | `140 110 95` | `saferoom` row: units in front of the vendor, to its sides, between stands |
 | `runui` | `1` | `0`: no DEFAULT CARDS panel on the create-run screen (the `~` Run tab and `/rules` stay) |
 | `bot_heal_requests` | `0` | Host (`~` Cheats tab, works without cheats): `1` = a player's heal key sends the nearest bot with a healing item to heal them. `0`: the game's own healing only; a client's request gets `The host has heal requests off.`, the host's own key says how to turn it on |
 | `outfits_screen` | `1` | `0`: add-on outfits are not offered in the game's customization screen and the Add-ons tab's **Wear** is off (only `/model`); restart to apply |

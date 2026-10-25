@@ -135,6 +135,7 @@ static DWORD WINAPI init_thread(LPVOID _) {
     cheats_init();
     rules_init();
     runui_init();
+    intel_init();
     cmds_init();
     steamnet_init();
     presence_init();
